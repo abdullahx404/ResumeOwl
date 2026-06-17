@@ -149,7 +149,7 @@ export function AnalyzerWorkspace() {
               Resume files
               <span className="mt-1 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-slate-300 px-4 py-5 text-sm text-slate-600 transition hover:border-owl-600 hover:bg-owl-50">
                 <FileUp className="h-5 w-5" aria-hidden="true" />
-                {isParsing ? "Parsing locally..." : "Upload PDF, DOCX, or TXT"}
+                {isParsing ? "Parsing..." : "Upload PDF, DOCX, or TXT"}
                 <input
                   className="sr-only"
                   type="file"
@@ -208,7 +208,7 @@ export function AnalyzerWorkspace() {
                 disabled={!canAnalyze || isParsing}
                 onClick={analyze}
               >
-                Run local scan
+                Analyze resume
               </button>
               <button
                 type="button"
@@ -246,7 +246,7 @@ function EmptyResults() {
         <h2 className="mt-4 text-xl font-semibold text-ink">No scan yet</h2>
         <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">
           Results will show keyword coverage, required skill matches, ATS issues,
-          weak bullets, and suggested improvements. No AI or permanent storage is used in Phase 2.
+          weak bullets, and suggested improvements. AI feedback appears automatically when configured.
         </p>
       </div>
     </div>

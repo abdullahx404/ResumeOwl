@@ -15,11 +15,17 @@ describe("POST /api/ai/generate-bullets", () => {
         }),
       }),
     );
-    const data = (await response.json()) as { configured: boolean; bullets: string[] };
+    const data = (await response.json()) as {
+      configured: boolean;
+      bullets: string[];
+      suggestedName?: string;
+      techStack?: string[];
+    };
 
     expect(response.status).toBe(200);
     expect(data.configured).toBe(false);
     expect(data.bullets).toHaveLength(3);
+    expect(data.suggestedName).toBeTruthy();
   });
 
   it("rejects invalid input", async () => {

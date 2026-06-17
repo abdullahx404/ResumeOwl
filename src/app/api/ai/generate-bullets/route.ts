@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateAiText, hasAiProvider } from "@/lib/ai/provider";
 import { extractJsonObject } from "@/lib/ai/json";
-import { generateLocalBullets } from "@/lib/maker/bullets";
+import { generateLocalBullets, inferProjectName, inferTechStack } from "@/lib/maker/bullets";
 import {
   bulletGenerationRequestSchema,
   bulletGenerationResponseSchema,
@@ -19,7 +19,7 @@ Rules:
 - Use only the project or experience notes and explicit tech stack.
 - If a metric is not provided, do not add one.
 - Keep bullets short, technical, and ATS-friendly.
-- Return only valid JSON in this shape: {"bullets":["..."]}.
+- Return only valid JSON in this shape: {"suggestedName":"...", "techStack":["..."], "bullets":["..."]}.
 
 Name: ${input.name}
 Section type: ${input.sectionType}
@@ -48,6 +48,8 @@ export async function POST(request: Request) {
   if (!hasAiProvider()) {
     return NextResponse.json({
       configured: false,
+      suggestedName: parsed.data.sectionType === "project" ? inferProjectName(parsed.data.notes) : parsed.data.name,
+      techStack: parsed.data.sectionType === "project" ? inferTechStack(parsed.data.notes) : parsed.data.techStack,
       bullets: generateLocalBullets(parsed.data),
     });
   }
@@ -60,10 +62,14 @@ export async function POST(request: Request) {
     return NextResponse.json({
       configured: true,
       bullets: result.bullets,
+      suggestedName: result.suggestedName,
+      techStack: result.techStack,
     });
   } catch {
     return NextResponse.json({
       configured: true,
+      suggestedName: parsed.data.sectionType === "project" ? inferProjectName(parsed.data.notes) : parsed.data.name,
+      techStack: parsed.data.sectionType === "project" ? inferTechStack(parsed.data.notes) : parsed.data.techStack,
       bullets: generateLocalBullets(parsed.data),
       error: "AI bullets could not be generated safely, so local bullets were used.",
     });

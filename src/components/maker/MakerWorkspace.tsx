@@ -4,8 +4,8 @@ import Link from "next/link";
 import { Eye, Plus, RotateCcw, Sparkles, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NotificationPill } from "@/components/ui/NotificationPill";
-import { generateLocalBullets, parseCommaList } from "@/lib/maker/bullets";
-import { addUniqueValue, commonCourses, commonSkills, filterOptions } from "@/lib/maker/options";
+import { generateLocalBullets, inferProjectName, inferTechStack, parseCommaList, textToBullets } from "@/lib/maker/bullets";
+import { addUniqueValue, autoGroupSkills, commonCourses, commonSkills, filterOptions } from "@/lib/maker/options";
 import { useResumeStore } from "@/stores/resume-store";
 import type {
   EducationEntry,
@@ -37,15 +37,6 @@ type ExperienceDraft = {
   notes: string;
   bulletCount: number;
   bullets: string[];
-};
-
-const skillBuckets: Record<string, string[]> = {
-  "Programming Languages": ["JavaScript", "TypeScript", "Python", "Java", "C++"],
-  Frontend: ["React", "Next.js", "Tailwind CSS"],
-  Backend: ["Node.js", "Express.js", "FastAPI"],
-  Databases: ["SQL", "PostgreSQL", "MongoDB", "Firebase"],
-  "Cloud/DevOps": ["AWS", "Docker", "Git"],
-  Other: [],
 };
 
 function createId(prefix: string) {
@@ -154,16 +145,39 @@ export function MakerWorkspace() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await response.json()) as { bullets?: string[]; configured?: boolean };
+      const data = (await response.json()) as {
+        bullets?: string[];
+        configured?: boolean;
+        suggestedName?: string;
+        techStack?: string[];
+      };
       const bullets = data.bullets?.length ? data.bullets : generateLocalBullets(payload);
       setProjects((current) =>
-        current.map((item) => (item.id === project.id ? { ...item, bullets } : item)),
+        current.map((item) =>
+          item.id === project.id
+            ? {
+                ...item,
+                name: data.suggestedName || item.name || inferProjectName(item.notes),
+                techStack: data.techStack?.length
+                  ? data.techStack.join(", ")
+                  : item.techStack || inferTechStack(item.notes).join(", "),
+                bullets,
+              }
+            : item,
+        ),
       );
       flash(data.configured === false ? "Local bullets generated." : "Bullets generated.");
     } catch {
       setProjects((current) =>
         current.map((item) =>
-          item.id === project.id ? { ...item, bullets: generateLocalBullets(payload) } : item,
+          item.id === project.id
+            ? {
+                ...item,
+                name: item.name || inferProjectName(item.notes),
+                techStack: item.techStack || inferTechStack(item.notes).join(", "),
+                bullets: generateLocalBullets(payload),
+              }
+            : item,
         ),
       );
       flash("Local bullets generated.");
@@ -210,19 +224,15 @@ export function MakerWorkspace() {
       return skills.length ? [{ id: "skills-manual", name: "Technical Skills", skills }] : [];
     }
 
-    const groups = Object.entries(skillBuckets)
-      .map(([name, bucket]) => ({
-        id: `skills-${name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`,
-        name,
-        skills: skills.filter((skill) =>
-          bucket.some((item) => item.toLowerCase() === skill.toLowerCase()),
-        ),
-      }))
-      .filter((group) => group.skills.length);
-    const grouped = new Set(groups.flatMap((group) => group.skills.map((skill) => skill.toLowerCase())));
-    const other = skills.filter((skill) => !grouped.has(skill.toLowerCase()));
+    return autoGroupSkills(skills);
+  }
 
-    return other.length ? [...groups, { id: "skills-other", name: "Other", skills: other }] : groups;
+  function convertOptionalSection(section: OptionalSection) {
+    const bullets = textToBullets(section.items.join("\n"), 6);
+    setOptionalSections((current) =>
+      current.map((item) => (item.id === section.id ? { ...item, items: bullets } : item)),
+    );
+    flash("Optional section converted to bullets.");
   }
 
   function applyToPreview() {
@@ -352,8 +362,8 @@ export function MakerWorkspace() {
                 <div key={item.id} className="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-2">
                   <TextField label="Institute" value={item.institute} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, institute: value } : entry))} />
                   <TextField label="Degree/program" value={item.degree} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, degree: value } : entry))} />
-                  <TextField label="Intake" value={item.startDate ?? ""} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, startDate: value } : entry))} />
-                  <TextField label="Graduation" value={item.endDate ?? ""} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, endDate: value } : entry))} />
+                  <TextField type="month" label="Intake month/year" value={item.startDate ?? ""} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, startDate: value } : entry))} />
+                  <TextField type="month" label="Graduation month/year" value={item.endDate ?? ""} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, endDate: value } : entry))} />
                   <TextField label="CGPA" value={item.cgpa ?? ""} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, cgpa: value } : entry))} />
                   <button type="button" className="self-end rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setEducation((current) => current.filter((entry) => entry.id !== item.id))}>
                     Remove
@@ -400,7 +410,11 @@ export function MakerWorkspace() {
               {optionalSections.map((section) => (
                 <div key={section.id} className="rounded-md border border-slate-200 p-3">
                   <TextField label="Section title" value={section.title} onChange={(value) => setOptionalSections((current) => current.map((item) => item.id === section.id ? { ...item, title: value } : item))} />
-                  <textarea className="mt-3 min-h-20 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={section.items.join("\n")} onChange={(event) => setOptionalSections((current) => current.map((item) => item.id === section.id ? { ...item, items: event.target.value.split("\n") } : item))} />
+                  <textarea aria-label={`${section.title} plain text or bullets`} className="mt-3 min-h-20 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={section.items.join("\n")} onChange={(event) => setOptionalSections((current) => current.map((item) => item.id === section.id ? { ...item, items: event.target.value.split("\n") } : item))} />
+                  <button type="button" className="mt-3 inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => convertOptionalSection(section)}>
+                    <Sparkles className="h-4 w-4" />
+                    Convert to bullets
+                  </button>
                 </div>
               ))}
             </div>
@@ -453,11 +467,11 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function TextField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function TextField({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
   return (
     <label className="block text-sm font-medium text-slate-700">
       {label}
-      <input className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={value} onChange={(event) => onChange(event.target.value)} />
+      <input type={type} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
 }
@@ -513,12 +527,12 @@ function ProjectEditor({ project, setProjects, onGenerate }: { project: ProjectD
   return (
     <div className="rounded-md border border-slate-200 p-3">
       <div className="grid gap-3 md:grid-cols-2">
-        <TextField label="Project name" value={project.name} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, name: value } : item))} />
+        <TextField label="Project name (editable)" value={project.name} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, name: value } : item))} />
         <TextField label="Link optional" value={project.link} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, link: value } : item))} />
-        <TextField label="Tech stack" value={project.techStack} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, techStack: value } : item))} />
+        <TextField label="Detected tech stack (editable)" value={project.techStack} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, techStack: value } : item))} />
         <label className="block text-sm font-medium text-slate-700">Bullet count<select className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" value={project.bulletCount} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, bulletCount: Number(event.target.value) } : item))}>{[2, 3, 4, 5, 6].map((count) => <option key={count}>{count}</option>)}</select></label>
       </div>
-      <textarea className="mt-3 min-h-24 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={project.notes} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, notes: event.target.value } : item))} placeholder="Rough notes about what you built" />
+      <textarea aria-label="Project details or description" className="mt-3 min-h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={project.notes} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, notes: event.target.value } : item))} placeholder="Paste project details. ResumeOwl will infer name, tech stack, and bullets, then you can edit all of them." />
       <EditorButtons onGenerate={onGenerate} onRemove={() => setProjects((current) => current.filter((item) => item.id !== project.id))} />
       <BulletEditor bullets={project.bullets} setBullets={(bullets) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, bullets } : item))} />
     </div>
@@ -531,8 +545,8 @@ function ExperienceEditor({ item, setExperience, onGenerate }: { item: Experienc
       <div className="grid gap-3 md:grid-cols-2">
         <TextField label="Role" value={item.role} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, role: value } : entry))} />
         <TextField label="Company" value={item.company} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, company: value } : entry))} />
-        <TextField label="Start date" value={item.startDate} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, startDate: value } : entry))} />
-        <TextField label="End date" value={item.endDate} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, endDate: value } : entry))} />
+        <TextField type="month" label="Start month/year" value={item.startDate} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, startDate: value } : entry))} />
+        <TextField type="month" label="End month/year" value={item.endDate} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, endDate: value } : entry))} />
       </div>
       <textarea className="mt-3 min-h-24 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={item.notes} onChange={(event) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, notes: event.target.value } : entry))} placeholder="What did you do?" />
       <EditorButtons onGenerate={onGenerate} onRemove={() => setExperience((current) => current.filter((entry) => entry.id !== item.id))} />

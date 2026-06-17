@@ -2,7 +2,7 @@ import { z } from "zod";
 import { resumeDocumentSchema } from "./resume";
 
 export const bulletGenerationRequestSchema = z.object({
-  name: z.string().trim().min(1).max(120),
+  name: z.string().trim().max(120).default(""),
   notes: z.string().trim().min(1).max(4000),
   techStack: z.array(z.string().trim().min(1)).max(30).default([]),
   count: z.number().int().min(2).max(6),
@@ -11,6 +11,8 @@ export const bulletGenerationRequestSchema = z.object({
 
 export const bulletGenerationResponseSchema = z.object({
   bullets: z.array(z.string().trim().min(1)).min(2).max(6),
+  suggestedName: z.string().trim().optional(),
+  techStack: z.array(z.string().trim().min(1)).max(30).optional(),
 });
 
 export const makerResumeSchema = resumeDocumentSchema;

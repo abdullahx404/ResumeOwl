@@ -55,3 +55,65 @@ export function parseCommaList(value: string): string[] {
     .map((item) => item.trim())
     .filter(Boolean);
 }
+
+const knownTech = [
+  "AWS",
+  "Docker",
+  "Express.js",
+  "FastAPI",
+  "Firebase",
+  "Java",
+  "JavaScript",
+  "MongoDB",
+  "Next.js",
+  "Node.js",
+  "PostgreSQL",
+  "Python",
+  "React",
+  "SQL",
+  "Tailwind CSS",
+  "TypeScript",
+];
+
+export function inferProjectName(notes: string): string {
+  const firstLine = notes
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  if (!firstLine) {
+    return "Technical Project";
+  }
+
+  const colonName = firstLine.match(/^([^:.-]{3,80})[:.-]/)?.[1]?.trim();
+  if (colonName) {
+    return colonName;
+  }
+
+  return firstLine
+    .replace(/\b(i|we)\s+(built|created|developed|made|implemented)\s+/i, "")
+    .split(/\s+/)
+    .slice(0, 7)
+    .join(" ")
+    .replace(/^\w/, (char) => char.toUpperCase());
+}
+
+export function inferTechStack(notes: string): string[] {
+  const normalized = notes.toLowerCase();
+
+  return knownTech.filter((tech) => normalized.includes(tech.toLowerCase()));
+}
+
+export function textToBullets(text: string, count = 3): string[] {
+  const parts = cleanNotes(text);
+  const safeCount = Math.min(6, Math.max(2, count));
+
+  if (!parts.length) {
+    return [];
+  }
+
+  return parts.slice(0, safeCount).map((part) => {
+    const trimmed = part.replace(/^[-*•]\s*/, "").trim();
+    return trimmed.endsWith(".") ? trimmed : `${trimmed}.`;
+  });
+}

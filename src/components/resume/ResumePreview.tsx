@@ -243,15 +243,17 @@ export function ResumePreview() {
           </p>
         </header>
 
-        <section className="mt-5">
-          <h2 className="resume-heading">Summary</h2>
-          <textarea
-            aria-label="Resume summary"
-            className="mt-2 min-h-20 w-full resize-none bg-transparent text-sm leading-6 text-slate-800 outline-none"
-            value={resume.summary ?? ""}
-            onChange={(event) => updateSummary(event.target.value)}
-          />
-        </section>
+        {resume.summary?.trim() ? (
+          <section className="mt-5">
+            <h2 className="resume-heading">Summary</h2>
+            <textarea
+              aria-label="Resume summary"
+              className="mt-2 min-h-20 w-full resize-none bg-transparent text-sm leading-6 text-slate-800 outline-none"
+              value={resume.summary ?? ""}
+              onChange={(event) => updateSummary(event.target.value)}
+            />
+          </section>
+        ) : null}
 
         <div className="mt-2 space-y-5">
           {resume.sectionOrder.map((sectionId, index) => (

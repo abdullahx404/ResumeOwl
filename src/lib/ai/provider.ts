@@ -10,7 +10,7 @@ function providerFromEnv(): AiProviderConfig | null {
   if (process.env.GEMINI_API_KEY && (!explicitProvider || explicitProvider === "gemini")) {
     return {
       provider: "gemini",
-      model: process.env.AI_MODEL || "gemini-1.5-flash",
+      model: process.env.AI_MODEL || "gemini-3.5-flash",
       apiKey: process.env.GEMINI_API_KEY,
     };
   }
@@ -51,6 +51,21 @@ type ChatResponse = {
 };
 
 async function callGemini(config: AiProviderConfig, prompt: string): Promise<string> {
+  const models = [...new Set([config.model, "gemini-2.5-flash", "gemini-flash-latest"])];
+  let lastError: Error | null = null;
+
+  for (const model of models) {
+    try {
+      return await callGeminiModel({ ...config, model }, prompt);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error("AI provider request failed.");
+    }
+  }
+
+  throw lastError ?? new Error("AI provider request failed.");
+}
+
+async function callGeminiModel(config: AiProviderConfig, prompt: string): Promise<string> {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${config.apiKey}`,
     {
