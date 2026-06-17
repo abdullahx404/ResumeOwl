@@ -117,3 +117,15 @@ export type AnalysisResult = {
   suggestedImprovements: string[];
   beforeAfterSummary: string;
 };
+
+export type RefactorResult = {
+  refactoredResumeText: string;
+  updatedSkills: string[];
+  improvedBullets: Array<{
+    before: string;
+    after: string;
+  }>;
+  atsNotes: string[];
+  improvementExplanation: string[];
+  previewResume?: ResumeDocument;
+};
