@@ -21,6 +21,30 @@ textarea {
   font: inherit;
 }
 
+:focus-visible {
+  outline: 2px solid #047857;
+  outline-offset: 2px;
+}
+
+.skip-link {
+  background: #064e3b;
+  border-radius: 0.375rem;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 700;
+  left: 1rem;
+  padding: 0.625rem 0.875rem;
+  position: fixed;
+  top: 1rem;
+  transform: translateY(-150%);
+  transition: transform 150ms ease;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
 .resume-heading {
   border-bottom: 1px solid #cbd5e1;
   color: #111827;

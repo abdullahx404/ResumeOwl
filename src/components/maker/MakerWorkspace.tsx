@@ -287,6 +287,30 @@ export function MakerWorkspace() {
     flash("Resume preview updated.");
   }
 
+  function resetMaker() {
+    setSkillMode("auto");
+    setCourseQuery("");
+    setSkillQuery("");
+    setCourses([]);
+    setSkills([]);
+    setEducation([emptyEducation()]);
+    setProjects([emptyProject()]);
+    setExperience([]);
+    setOptionalSections([]);
+    setPersonal({
+      fullName: "",
+      title: "",
+      email: "",
+      phone: "",
+      github: "",
+      linkedin: "",
+      portfolio: "",
+      location: "",
+      summary: "",
+    });
+    flash("Maker data cleared from this session.");
+  }
+
   return (
     <>
       <NotificationPill message={notice} tone="info" />
@@ -397,7 +421,7 @@ export function MakerWorkspace() {
             <Link href="/preview" className="inline-flex w-full items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               Open preview
             </Link>
-            <button type="button" className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => window.location.reload()}>
+            <button type="button" className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={resetMaker}>
               <RotateCcw className="h-4 w-4" />
               Reset maker
             </button>

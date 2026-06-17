@@ -24,7 +24,7 @@ const tools = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+    <main id="main-content" className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
