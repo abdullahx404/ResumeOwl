@@ -129,8 +129,8 @@ export function ResumePreview() {
               Resume editor
             </h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Edit the sample resume, reorder sections, copy LaTeX-style source,
-              or print to PDF. State is held in memory only.
+              Edit your browser-local resume, reorder sections, copy LaTeX-style source,
+              or print to PDF.
             </p>
           </div>
 
@@ -245,7 +245,17 @@ export function ResumePreview() {
         </header>
 
         {resume.summary?.trim() ? (
-          <section className="mt-5">
+          <section className="relative mt-5 pt-3">
+            <div className="no-print absolute right-0 top-0 flex translate-y-[-50%] gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+              <button
+                type="button"
+                className="rounded-full p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-700"
+                aria-label="Remove Summary"
+                onClick={() => updateSummary("")}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
             <h2 className="resume-heading">Summary</h2>
             <textarea
               aria-label="Resume summary"

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, useMemo, useState } from "react";
-import { FileUp, RotateCcw, SearchCheck } from "lucide-react";
+import { FileUp, Loader2, RotateCcw, SearchCheck } from "lucide-react";
 import { analyzeResumeLocally } from "@/lib/ats/analyzer";
 import { uploadHelpText, validateResumeFiles } from "@/lib/parsing/file-validation";
 import { parseResumeFiles } from "@/lib/parsing/resume-parser";
@@ -28,6 +28,7 @@ export function AnalyzerWorkspace() {
   >("idle");
   const [notice, setNotice] = useState("");
   const [isParsing, setIsParsing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const canAnalyze = useMemo(
     () => resumeText.trim().length > 0 && jobDescription.trim().length > 0,
@@ -73,6 +74,7 @@ export function AnalyzerWorkspace() {
     }
 
     const skills = splitSkills(requiredSkills);
+    setIsAnalyzing(true);
     const localResult = analyzeResumeLocally({
       resumeText,
       jobDescription,
@@ -109,6 +111,8 @@ export function AnalyzerWorkspace() {
       setAiStatus("ready");
     } catch {
       setAiStatus("error");
+    } finally {
+      setIsAnalyzing(false);
     }
   }
 
@@ -120,6 +124,7 @@ export function AnalyzerWorkspace() {
     setResult(null);
     setAiFeedback(null);
     setAiStatus("idle");
+    setIsAnalyzing(false);
     setNotice("Analyzer data cleared from this session.");
     window.setTimeout(() => setNotice(""), 2400);
   }
@@ -205,10 +210,13 @@ export function AnalyzerWorkspace() {
               <button
                 type="button"
                 className="rounded-md bg-owl-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-owl-900 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={!canAnalyze || isParsing}
+                disabled={!canAnalyze || isParsing || isAnalyzing}
                 onClick={analyze}
               >
-                Analyze resume
+                <span className="inline-flex items-center justify-center gap-2">
+                  {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  {isAnalyzing ? "Analyzing..." : "Analyze Resume"}
+                </span>
               </button>
               <button
                 type="button"
@@ -417,7 +425,10 @@ function AiFeedbackPanel({
   if (status === "loading") {
     return (
       <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
-        <p className="text-sm font-semibold text-blue-950">Checking optional AI feedback...</p>
+        <p className="flex items-center gap-2 text-sm font-semibold text-blue-950">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Checking AI Feedback...
+        </p>
         <p className="mt-1 text-sm leading-6 text-blue-900">
           Local ATS results are already available. AI feedback will appear if a provider key is configured.
         </p>
@@ -428,9 +439,9 @@ function AiFeedbackPanel({
   if (status === "unavailable") {
     return (
       <div className="rounded-lg border border-amber-100 bg-amber-50 p-4">
-        <p className="text-sm font-semibold text-amber-950">AI feedback is not configured</p>
+        <p className="text-sm font-semibold text-amber-950">AI Feedback Failed, Local Scan Validated</p>
         <p className="mt-1 text-sm leading-6 text-amber-900">
-          Add `GEMINI_API_KEY`, `GROQ_API_KEY`, or `OPENROUTER_API_KEY` on the server to enable recruiter-style AI feedback.
+          AI feedback is not configured. Add `GEMINI_API_KEY`, `GROQ_API_KEY`, or `OPENROUTER_API_KEY` on the server to enable recruiter-style AI feedback.
         </p>
       </div>
     );
@@ -439,7 +450,7 @@ function AiFeedbackPanel({
   if (status === "error" || !feedback) {
     return (
       <div className="rounded-lg border border-red-100 bg-red-50 p-4">
-        <p className="text-sm font-semibold text-red-950">AI feedback could not be generated</p>
+        <p className="text-sm font-semibold text-red-950">AI Feedback Failed, Local Scan Validated</p>
         <p className="mt-1 text-sm leading-6 text-red-900">
           The local scan is still valid. Try again later or check the configured AI provider.
         </p>

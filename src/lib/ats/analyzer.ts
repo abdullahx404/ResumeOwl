@@ -1,5 +1,6 @@
 import type { AnalysisResult, AtsIssue, KeywordMatch, WeakBullet } from "@/types/resume";
-import { extractKeywords, hasTerm, normalizeText, splitLines } from "./text";
+import { commonCourses, commonSkills } from "@/lib/maker/options";
+import { hasTerm, normalizeText, splitLines } from "./text";
 
 const sectionPatterns: Record<string, RegExp> = {
   education: /\b(education|academic background)\b/i,
@@ -26,6 +27,42 @@ const actionVerbs = [
   "owned",
   "analyzed",
 ];
+
+const extraSkillTerms = [
+  "api",
+  "rest api",
+  "rest apis",
+  "websocket",
+  "websockets",
+  "webrtc",
+  "socket.io",
+  "html5",
+  "css3",
+  "responsive web design",
+  "front-end frameworks",
+  "backend development",
+  "back-end development",
+  "database management",
+  "debugging",
+  "problem-solving",
+  "communication",
+  "teamwork",
+  "testing",
+  "ui/ux",
+  "ui/ux principles",
+  "version control",
+  "git and github",
+];
+
+const ignoredRequiredSkillFragments = new Set([
+  "and javascript",
+  "or angular",
+  "or similar",
+]);
+
+const skillVocabulary = [...new Set([...commonSkills, ...commonCourses, ...extraSkillTerms])].sort(
+  (a, b) => b.length - a.length,
+);
 
 function detectSections(resumeText: string): string[] {
   return Object.entries(sectionPatterns)
@@ -76,6 +113,49 @@ function analyzeBullets(bullets: string[]): WeakBullet[] {
       };
     })
     .filter((bullet) => bullet.issues.length > 0);
+}
+
+function uniqueTerms(terms: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const term of terms) {
+    const normalized = normalizeText(term);
+
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+    result.push(term);
+  }
+
+  return result;
+}
+
+function extractSkillKeywords(text: string): string[] {
+  return uniqueTerms(
+    skillVocabulary.filter((term) => {
+      const normalized = normalizeText(term);
+      return normalized.length > 2 && hasTerm(text, normalized);
+    }),
+  ).map((term) => normalizeText(term));
+}
+
+function normalizeRequiredSkills(requiredSkills: string[], jobDescription: string): string[] {
+  const explicit = requiredSkills
+    .flatMap((skill) => skill.split(/[,;\n]/))
+    .map((skill) => skill.trim())
+    .filter(Boolean)
+    .filter((skill) => !ignoredRequiredSkillFragments.has(normalizeText(skill)))
+    .flatMap((skill) => {
+      const matchedKnownTerms = skillVocabulary.filter(
+        (term) => normalizeText(term).length > 2 && hasTerm(skill, term),
+      );
+      return matchedKnownTerms.length ? matchedKnownTerms : [skill];
+    });
+
+  return uniqueTerms([...explicit, ...extractSkillKeywords(jobDescription)]);
 }
 
 function buildIssues({
@@ -191,12 +271,10 @@ export function analyzeResumeLocally({
   jobDescription: string;
   requiredSkills?: string[];
 }): AnalysisResult {
-  const jobKeywords = extractKeywords(jobDescription);
+  const jobKeywords = extractSkillKeywords(jobDescription);
   const matchedKeywords = jobKeywords.filter((keyword) => hasTerm(resumeText, keyword));
   const missingKeywords = jobKeywords.filter((keyword) => !hasTerm(resumeText, keyword));
-  const requiredSkillMatches = requiredSkills
-    .map((skill) => skill.trim())
-    .filter(Boolean)
+  const requiredSkillMatches = normalizeRequiredSkills(requiredSkills, jobDescription)
     .map((skill) => ({
       keyword: skill,
       present: hasTerm(resumeText, skill),

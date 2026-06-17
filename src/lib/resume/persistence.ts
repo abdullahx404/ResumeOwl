@@ -9,6 +9,14 @@ export type StoredProfile = {
 
 const resumeStorageKey = "resumeowl.resume.v1";
 const profileStorageKey = "resumeowl.profile.v1";
+const sampleContactValues = new Set([
+  "amina@example.com",
+  "+92 300 0000000",
+  "https://github.com/amina",
+  "https://linkedin.com/in/amina",
+  "https://amina.dev",
+  "Lahore, Pakistan",
+]);
 
 function canUseBrowserStorage() {
   return typeof window !== "undefined";
@@ -40,10 +48,18 @@ export function applyProfileToResume(
   resume: ResumeDocument,
   profile: Pick<StoredProfile, "fullName" | "title">,
 ): ResumeDocument {
+  const personal = { ...resume.personal };
+
+  for (const field of ["email", "phone", "github", "linkedin", "portfolio", "location"] as const) {
+    if (personal[field] && sampleContactValues.has(personal[field])) {
+      personal[field] = "";
+    }
+  }
+
   return {
     ...resume,
     personal: {
-      ...resume.personal,
+      ...personal,
       fullName: profile.fullName || resume.personal.fullName,
       title: profile.title || resume.personal.title,
     },
@@ -68,12 +84,12 @@ export function saveStoredResume(resume: ResumeDocument) {
 
 export function getInitialResume(): ResumeDocument {
   const storedResume = getStoredResume();
+  const storedProfile = getStoredProfile();
 
   if (storedResume) {
-    return storedResume;
+    return storedProfile ? applyProfileToResume(storedResume, storedProfile) : storedResume;
   }
 
-  const storedProfile = getStoredProfile();
   const resume = structuredClone(sampleResume);
 
   return storedProfile ? applyProfileToResume(resume, storedProfile) : resume;

@@ -28,6 +28,32 @@ describe("resume persistence", () => {
     expect(resume.personal.title).toBe("Software Engineer");
   });
 
+  it("removes old sample contact details when applying a stored profile", () => {
+    const resume = applyProfileToResume(
+      {
+        ...sampleResume,
+        personal: {
+          ...sampleResume.personal,
+          email: "amina@example.com",
+          phone: "+92 300 0000000",
+          github: "https://github.com/amina",
+          linkedin: "https://linkedin.com/in/amina",
+          portfolio: "https://amina.dev",
+          location: "Lahore, Pakistan",
+        },
+      },
+      {
+        fullName: "Abdullah Zia",
+        title: "Software Engineer",
+      },
+    );
+
+    expect(resume.personal.fullName).toBe("Abdullah Zia");
+    expect(resume.personal.email).toBe("");
+    expect(resume.personal.github).toBe("");
+    expect(resume.personal.linkedin).toBe("");
+  });
+
   it("stores and reads the browser-local resume draft", () => {
     const resume = applyProfileToResume(sampleResume, {
       fullName: "Resume User",

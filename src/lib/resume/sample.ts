@@ -2,14 +2,14 @@ import type { ResumeDocument } from "@/types/resume";
 
 export const sampleResume: ResumeDocument = {
   personal: {
-    fullName: "Amina Khan",
-    title: "Software Engineering Student",
-    email: "amina@example.com",
-    phone: "+92 300 0000000",
-    github: "https://github.com/amina",
-    linkedin: "https://linkedin.com/in/amina",
-    portfolio: "https://amina.dev",
-    location: "Lahore, Pakistan",
+    fullName: "Your Name",
+    title: "Your Role",
+    email: "",
+    phone: "",
+    github: "",
+    linkedin: "",
+    portfolio: "",
+    location: "",
   },
   summary:
     "Software engineering student focused on full-stack web apps, clean UI systems, and practical AI-assisted tooling.",

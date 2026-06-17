@@ -41,10 +41,18 @@ describe("analyzeResumeLocally", () => {
       requiredSkills: ["React", "Testing"],
     });
 
-    expect(result.requiredSkillMatches).toEqual([
-      { keyword: "React", present: true },
-      { keyword: "Testing", present: false },
-    ]);
+    expect(result.requiredSkillMatches).toEqual(
+      expect.arrayContaining([
+        { keyword: "React", present: true },
+        { keyword: "testing", present: false },
+      ]),
+    );
+    expect(result.requiredSkillMatches).not.toEqual(
+      expect.arrayContaining([
+        { keyword: "C", present: true },
+        { keyword: "R", present: true },
+      ]),
+    );
   });
 
   it("detects contact info and sections", () => {
@@ -71,5 +79,18 @@ describe("analyzeResumeLocally", () => {
     });
 
     expect(result.atsIssues.length).toBeGreaterThan(0);
+  });
+
+  it("ignores generic job description words when building missing keywords", () => {
+    const result = analyzeResumeLocally({
+      resumeText: "Skills\nReact, TypeScript\nProjects\n- Built React app for 100 users.",
+      jobDescription:
+        "Ideal candidate should build clean digital applications and solve user-friendly problems with React and PostgreSQL.",
+    });
+
+    expect(result.missingKeywords).toContain("postgresql");
+    expect(result.missingKeywords).not.toEqual(
+      expect.arrayContaining(["ideal", "candidate", "build", "applications", "clean", "solve"]),
+    );
   });
 });
