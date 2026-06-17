@@ -6,6 +6,7 @@ import { analyzeResumeLocally } from "@/lib/ats/analyzer";
 import { uploadHelpText, validateResumeFiles } from "@/lib/parsing/file-validation";
 import { parseResumeFiles } from "@/lib/parsing/resume-parser";
 import { NotificationPill } from "@/components/ui/NotificationPill";
+import type { AiAnalyzerFeedback } from "@/lib/validation/analyzer";
 import type { AnalysisResult, ParsedResumeFile } from "@/types/resume";
 
 function splitSkills(value: string): string[] {
@@ -21,6 +22,10 @@ export function AnalyzerWorkspace() {
   const [requiredSkills, setRequiredSkills] = useState("");
   const [parsedFiles, setParsedFiles] = useState<ParsedResumeFile[]>([]);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [aiFeedback, setAiFeedback] = useState<AiAnalyzerFeedback | null>(null);
+  const [aiStatus, setAiStatus] = useState<
+    "idle" | "loading" | "ready" | "unavailable" | "error"
+  >("idle");
   const [notice, setNotice] = useState("");
   const [isParsing, setIsParsing] = useState(false);
 
@@ -60,20 +65,51 @@ export function AnalyzerWorkspace() {
     }
   }
 
-  function analyze() {
+  async function analyze() {
     if (!canAnalyze) {
       setNotice("Add resume text and a job description first.");
       window.setTimeout(() => setNotice(""), 2400);
       return;
     }
 
-    setResult(
-      analyzeResumeLocally({
-        resumeText,
-        jobDescription,
-        requiredSkills: splitSkills(requiredSkills),
-      }),
-    );
+    const skills = splitSkills(requiredSkills);
+    const localResult = analyzeResumeLocally({
+      resumeText,
+      jobDescription,
+      requiredSkills: skills,
+    });
+    setResult(localResult);
+    setAiFeedback(null);
+    setAiStatus("loading");
+
+    try {
+      const response = await fetch("/api/ai/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          resumeText,
+          jobDescription,
+          requiredSkills: skills,
+        }),
+      });
+      const data = (await response.json()) as {
+        configured?: boolean;
+        feedback?: AiAnalyzerFeedback;
+        error?: string;
+      };
+
+      if (!response.ok || !data.feedback) {
+        setAiStatus(data.configured === false ? "unavailable" : "error");
+        return;
+      }
+
+      setAiFeedback(data.feedback);
+      setAiStatus("ready");
+    } catch {
+      setAiStatus("error");
+    }
   }
 
   function reset() {
@@ -82,6 +118,8 @@ export function AnalyzerWorkspace() {
     setRequiredSkills("");
     setParsedFiles([]);
     setResult(null);
+    setAiFeedback(null);
+    setAiStatus("idle");
     setNotice("Analyzer data cleared from this session.");
     window.setTimeout(() => setNotice(""), 2400);
   }
@@ -185,7 +223,15 @@ export function AnalyzerWorkspace() {
         </section>
 
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
-          {result ? <AnalysisResults result={result} /> : <EmptyResults />}
+          {result ? (
+            <AnalysisResults
+              result={result}
+              aiFeedback={aiFeedback}
+              aiStatus={aiStatus}
+            />
+          ) : (
+            <EmptyResults />
+          )}
         </section>
       </div>
     </>
@@ -207,7 +253,15 @@ function EmptyResults() {
   );
 }
 
-function AnalysisResults({ result }: { result: AnalysisResult }) {
+function AnalysisResults({
+  result,
+  aiFeedback,
+  aiStatus,
+}: {
+  result: AnalysisResult;
+  aiFeedback: AiAnalyzerFeedback | null;
+  aiStatus: "idle" | "loading" | "ready" | "unavailable" | "error";
+}) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -294,6 +348,8 @@ function AnalysisResults({ result }: { result: AnalysisResult }) {
       <ResultBlock title="Before/after summary">
         <p className="text-sm leading-6 text-slate-700">{result.beforeAfterSummary}</p>
       </ResultBlock>
+
+      <AiFeedbackPanel status={aiStatus} feedback={aiFeedback} />
     </div>
   );
 }
@@ -343,6 +399,101 @@ function PillList({
           {item}
         </span>
       ))}
+    </div>
+  );
+}
+
+function AiFeedbackPanel({
+  status,
+  feedback,
+}: {
+  status: "idle" | "loading" | "ready" | "unavailable" | "error";
+  feedback: AiAnalyzerFeedback | null;
+}) {
+  if (status === "idle") {
+    return null;
+  }
+
+  if (status === "loading") {
+    return (
+      <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+        <p className="text-sm font-semibold text-blue-950">Checking optional AI feedback...</p>
+        <p className="mt-1 text-sm leading-6 text-blue-900">
+          Local ATS results are already available. AI feedback will appear if a provider key is configured.
+        </p>
+      </div>
+    );
+  }
+
+  if (status === "unavailable") {
+    return (
+      <div className="rounded-lg border border-amber-100 bg-amber-50 p-4">
+        <p className="text-sm font-semibold text-amber-950">AI feedback is not configured</p>
+        <p className="mt-1 text-sm leading-6 text-amber-900">
+          Add `GEMINI_API_KEY`, `GROQ_API_KEY`, or `OPENROUTER_API_KEY` on the server to enable recruiter-style AI feedback.
+        </p>
+      </div>
+    );
+  }
+
+  if (status === "error" || !feedback) {
+    return (
+      <div className="rounded-lg border border-red-100 bg-red-50 p-4">
+        <p className="text-sm font-semibold text-red-950">AI feedback could not be generated</p>
+        <p className="mt-1 text-sm leading-6 text-red-900">
+          The local scan is still valid. Try again later or check the configured AI provider.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 rounded-lg border border-owl-100 bg-owl-50 p-4">
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-wide text-owl-900">
+          Recruiter-style AI feedback
+        </p>
+        <p className="mt-2 text-sm leading-6 text-owl-950">{feedback.recruiterFeedback}</p>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-semibold text-owl-950">AI suggested improvements</h3>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-owl-950">
+          {feedback.suggestedImprovements.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+
+      {feedback.rewrittenWeakBullets.length ? (
+        <div>
+          <h3 className="text-sm font-semibold text-owl-950">Before/after bullet rewrites</h3>
+          <div className="mt-2 space-y-3">
+            {feedback.rewrittenWeakBullets.map((bullet) => (
+              <div key={`${bullet.before}-${bullet.after}`} className="rounded-md bg-white p-3">
+                <p className="text-xs font-semibold uppercase text-slate-500">Before</p>
+                <p className="mt-1 text-sm text-slate-700">{bullet.before}</p>
+                <p className="mt-3 text-xs font-semibold uppercase text-owl-700">After</p>
+                <p className="mt-1 text-sm text-slate-900">{bullet.after}</p>
+                <p className="mt-2 text-xs leading-5 text-slate-600">{bullet.rationale}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <p className="text-sm leading-6 text-owl-950">{feedback.beforeAfterSummary}</p>
+
+      {feedback.cautionNotes.length ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+          <h3 className="text-sm font-semibold text-amber-950">Verify before using</h3>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-amber-950">
+            {feedback.cautionNotes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }
