@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Copy, Printer, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Download, FileDown, Printer, RotateCcw, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { downloadBlob, downloadTextFile, safeFileName } from "@/lib/export/filenames";
 import { createLatexStyleSource } from "@/lib/resume/source";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/stores/resume-store";
@@ -97,6 +98,24 @@ export function ResumePreview() {
     window.print();
   }
 
+  function sourceFileName(extension: "tex" | "docx") {
+    return `${safeFileName(resume.personal.fullName)}.${extension}`;
+  }
+
+  function downloadSource() {
+    downloadTextFile(source, sourceFileName("tex"), "application/x-tex");
+    setCopyStatus("Source downloaded");
+    window.setTimeout(() => setCopyStatus(""), 1800);
+  }
+
+  async function downloadDocx() {
+    const { createDocxBlob } = await import("@/lib/export/docx");
+    const blob = await createDocxBlob(resume);
+    downloadBlob(blob, sourceFileName("docx"));
+    setCopyStatus("DOCX downloaded");
+    window.setTimeout(() => setCopyStatus(""), 1800);
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
       <aside className="no-print h-fit rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
@@ -148,7 +167,7 @@ export function ResumePreview() {
               onClick={printResume}
             >
               <Printer className="h-4 w-4" />
-              Print
+              PDF
             </button>
             <button
               type="button"
@@ -157,6 +176,25 @@ export function ResumePreview() {
             >
               <Copy className="h-4 w-4" />
               Source
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              onClick={downloadDocx}
+            >
+              <FileDown className="h-4 w-4" />
+              DOCX
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              onClick={downloadSource}
+            >
+              <Download className="h-4 w-4" />
+              TEX
             </button>
           </div>
 
