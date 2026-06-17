@@ -6,7 +6,7 @@ export function PrivacyNotice() {
       <div className="flex gap-3">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-owl-700" aria-hidden="true" />
         <p className="leading-6">
-          No login, no database, and no saved resume history. Current drafts stay in memory for this browser session unless you download or copy them.
+          No login and no database. Your profile and latest resume draft stay saved only in this browser unless you clear browser history or site data.
         </p>
       </div>
     </div>

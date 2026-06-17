@@ -4,7 +4,6 @@ import { join } from "node:path";
 
 const forbiddenPatterns = [
   "dangerouslySetInnerHTML",
-  "localStorage",
   "sessionStorage",
   "console.log",
   "console.error",
@@ -27,6 +26,7 @@ describe("source privacy and XSS guardrails", () => {
   it("does not introduce raw HTML rendering, browser persistence, or console logging", () => {
     const matches = sourceFiles(join(process.cwd(), "src"))
       .filter((file) => !file.endsWith("source-scan.test.ts"))
+      .filter((file) => !file.endsWith(".test.ts") && !file.endsWith(".test.tsx"))
       .flatMap((file) => {
         const content = readFileSync(file, "utf8");
         return forbiddenPatterns
@@ -35,5 +35,17 @@ describe("source privacy and XSS guardrails", () => {
       });
 
     expect(matches).toEqual([]);
+  });
+
+  it("keeps browser local storage usage isolated to the resume persistence helper", () => {
+    const matches = sourceFiles(join(process.cwd(), "src"))
+      .filter((file) => !file.endsWith("source-scan.test.ts"))
+      .filter((file) => !file.endsWith(".test.ts") && !file.endsWith(".test.tsx"))
+      .flatMap((file) => {
+        const content = readFileSync(file, "utf8");
+        return content.includes("localStorage") ? [file] : [];
+      });
+
+    expect(matches).toEqual([join(process.cwd(), "src", "lib", "resume", "persistence.ts")]);
   });
 });

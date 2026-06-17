@@ -8,6 +8,6 @@ describe("PrivacyNotice", () => {
 
     expect(screen.getByText(/No login/i)).toBeInTheDocument();
     expect(screen.getByText(/no database/i)).toBeInTheDocument();
-    expect(screen.getByText(/browser session/i)).toBeInTheDocument();
+    expect(screen.getByText(/only in this browser/i)).toBeInTheDocument();
   });
 });

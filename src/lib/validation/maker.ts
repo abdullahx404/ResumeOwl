@@ -7,6 +7,7 @@ export const bulletGenerationRequestSchema = z.object({
   techStack: z.array(z.string().trim().min(1)).max(30).default([]),
   count: z.number().int().min(2).max(6),
   sectionType: z.enum(["project", "experience"]),
+  generationFocus: z.string().trim().max(500).optional(),
 });
 
 export const bulletGenerationResponseSchema = z.object({

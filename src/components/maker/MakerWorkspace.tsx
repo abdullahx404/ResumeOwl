@@ -7,6 +7,7 @@ import { NotificationPill } from "@/components/ui/NotificationPill";
 import { generateLocalBullets, inferProjectName, inferTechStack, parseCommaList, textToBullets } from "@/lib/maker/bullets";
 import { addUniqueValue, autoGroupSkills, commonCourses, commonSkills, filterOptions } from "@/lib/maker/options";
 import { formatResumeDateRange } from "@/lib/resume/dates";
+import { getStoredProfile } from "@/lib/resume/persistence";
 import { useResumeStore } from "@/stores/resume-store";
 import type {
   EducationEntry,
@@ -40,6 +41,13 @@ type ExperienceDraft = {
   bullets: string[];
 };
 
+type ManualSkillGroupDraft = {
+  id: string;
+  name: string;
+  query: string;
+  skills: string[];
+};
+
 type MakerDraftState = {
   courses: string[];
   education: EducationEntry[];
@@ -59,6 +67,7 @@ type MakerDraftState = {
   projects: ProjectDraft[];
   skillMode: SkillMode;
   skills: string[];
+  manualSkillGroups: ManualSkillGroupDraft[];
 };
 
 let inMemoryMakerDraft: MakerDraftState | null = null;
@@ -112,6 +121,15 @@ function emptyOptional(): OptionalSection {
   };
 }
 
+function emptyManualSkillGroup(name = ""): ManualSkillGroupDraft {
+  return {
+    id: createId("skill-group"),
+    name,
+    query: "",
+    skills: [],
+  };
+}
+
 export function MakerWorkspace() {
   const setResume = useResumeStore((state) => state.setResume);
   const [notice, setNotice] = useState("");
@@ -121,6 +139,9 @@ export function MakerWorkspace() {
   const [skillQuery, setSkillQuery] = useState("");
   const [courses, setCourses] = useState<string[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
+  const [manualSkillGroups, setManualSkillGroups] = useState<ManualSkillGroupDraft[]>([
+    emptyManualSkillGroup("Frontend"),
+  ]);
   const [projectGeneratingIds, setProjectGeneratingIds] = useState<string[]>([]);
   const [experienceGeneratingIds, setExperienceGeneratingIds] = useState<string[]>([]);
   const [optionalConvertingIds, setOptionalConvertingIds] = useState<string[]>([]);
@@ -154,6 +175,21 @@ export function MakerWorkspace() {
       setProjects(inMemoryMakerDraft.projects.length ? inMemoryMakerDraft.projects : [emptyProject()]);
       setSkillMode(inMemoryMakerDraft.skillMode);
       setSkills(inMemoryMakerDraft.skills);
+      setManualSkillGroups(
+        inMemoryMakerDraft.manualSkillGroups?.length
+          ? inMemoryMakerDraft.manualSkillGroups
+          : [emptyManualSkillGroup("Frontend")],
+      );
+    } else {
+      const profile = getStoredProfile();
+
+      if (profile?.onboarded) {
+        setPersonal((current) => ({
+          ...current,
+          fullName: profile.fullName,
+          title: profile.title,
+        }));
+      }
     }
 
     setDraftHydrated(true);
@@ -173,8 +209,9 @@ export function MakerWorkspace() {
       projects,
       skillMode,
       skills,
+      manualSkillGroups,
     };
-  }, [courses, draftHydrated, education, experience, optionalSections, personal, projects, skillMode, skills]);
+  }, [courses, draftHydrated, education, experience, manualSkillGroups, optionalSections, personal, projects, skillMode, skills]);
 
   function flash(message: string) {
     setNotice(message);
@@ -203,6 +240,8 @@ export function MakerWorkspace() {
       techStack: parseCommaList(project.techStack),
       count: project.bulletCount,
       sectionType: "project" as const,
+      generationFocus:
+        "Make bullets strongly tech-stack-oriented and number-oriented. Use percentages, counts, user numbers, or scale only when they are explicitly present in the project details; never invent metrics.",
     };
 
     setProjectGeneratingIds((current) => addUniqueValue(current, project.id));
@@ -225,7 +264,7 @@ export function MakerWorkspace() {
           item.id === project.id
             ? {
                 ...item,
-                name: data.suggestedName || item.name || inferProjectName(item.notes),
+                name: item.name || data.suggestedName || inferProjectName(item.notes),
                 techStack: data.techStack?.length
                   ? data.techStack.join(", ")
                   : item.techStack || inferTechStack(item.notes).join(", "),
@@ -266,6 +305,8 @@ export function MakerWorkspace() {
       techStack: [],
       count: item.bulletCount,
       sectionType: "experience" as const,
+      generationFocus:
+        "Make bullets strongly role-impact-oriented and number-oriented. Use percentages, counts, user numbers, or scale only when they are explicitly present in the experience details; never invent metrics.",
     };
 
     setExperienceGeneratingIds((current) => addUniqueValue(current, item.id));
@@ -300,7 +341,13 @@ export function MakerWorkspace() {
     }
 
     if (skillMode === "manual") {
-      return skills.length ? [{ id: "skills-manual", name: "Technical Skills", skills }] : [];
+      return manualSkillGroups
+        .map((group) => ({
+          id: group.id,
+          name: group.name.trim() || "Skill Group",
+          skills: group.skills,
+        }))
+        .filter((group) => group.skills.length > 0);
     }
 
     return autoGroupSkills(skills);
@@ -391,6 +438,7 @@ export function MakerWorkspace() {
     setSkillQuery("");
     setCourses([]);
     setSkills([]);
+    setManualSkillGroups([emptyManualSkillGroup("Frontend")]);
     setEducation([emptyEducation()]);
     setProjects([emptyProject()]);
     setExperience([]);
@@ -469,11 +517,18 @@ export function MakerWorkspace() {
             <div className="grid gap-2 sm:grid-cols-3">
               {(["auto", "manual", "none"] as SkillMode[]).map((mode) => (
                 <button key={mode} type="button" className={skillMode === mode ? "rounded-md bg-owl-700 px-3 py-2 text-sm font-semibold text-white" : "rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"} onClick={() => setSkillMode(mode)}>
-                  {mode === "auto" ? "Auto-grouped" : mode === "manual" ? "Manual group" : "No grouping"}
+                  {mode === "auto" ? "Auto-Grouped" : mode === "manual" ? "Manual Group" : "No Grouping"}
                 </button>
               ))}
             </div>
-            <SearchList query={skillQuery} setQuery={setSkillQuery} options={skillOptions} values={skills} addValue={addSkill} removeValue={(value) => setSkills((current) => current.filter((item) => item !== value))} />
+            {skillMode === "manual" ? (
+              <ManualSkillGroups
+                groups={manualSkillGroups}
+                setGroups={setManualSkillGroups}
+              />
+            ) : (
+              <SearchList query={skillQuery} setQuery={setSkillQuery} options={skillOptions} values={skills} addValue={addSkill} removeValue={(value) => setSkills((current) => current.filter((item) => item !== value))} />
+            )}
           </Panel>
 
           <Panel title="Projects">
@@ -611,6 +666,76 @@ function SearchList({ query, setQuery, options, values, addValue, removeValue }:
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ManualSkillGroups({
+  groups,
+  setGroups,
+}: {
+  groups: ManualSkillGroupDraft[];
+  setGroups: React.Dispatch<React.SetStateAction<ManualSkillGroupDraft[]>>;
+}) {
+  function updateGroup(groupId: string, update: Partial<ManualSkillGroupDraft>) {
+    setGroups((current) =>
+      current.map((group) => (group.id === groupId ? { ...group, ...update } : group)),
+    );
+  }
+
+  function addSkillToGroup(group: ManualSkillGroupDraft, value = group.query) {
+    const skills = addUniqueValue(group.skills, value);
+    setGroups((current) =>
+      current.map((item) => (item.id === group.id ? { ...item, skills, query: "" } : item)),
+    );
+  }
+
+  function removeSkillFromGroup(groupId: string, skill: string) {
+    setGroups((current) =>
+      current.map((group) =>
+        group.id === groupId
+          ? { ...group, skills: group.skills.filter((item) => item !== skill) }
+          : group,
+      ),
+    );
+  }
+
+  return (
+    <div className="mt-4 space-y-4">
+      {groups.map((group) => {
+        const options = filterOptions(commonSkills, group.query);
+
+        return (
+          <div key={group.id} className="rounded-md border border-slate-200 p-3">
+            <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+              <TextField
+                label="Group Name"
+                value={group.name}
+                onChange={(value) => updateGroup(group.id, { name: value })}
+              />
+              <button
+                type="button"
+                className="self-end rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                onClick={() => setGroups((current) => current.filter((item) => item.id !== group.id))}
+              >
+                Remove Group
+              </button>
+            </div>
+            <SearchList
+              query={group.query}
+              setQuery={(value) => updateGroup(group.id, { query: value })}
+              options={options}
+              values={group.skills}
+              addValue={(value) => addSkillToGroup(group, value)}
+              removeValue={(skill) => removeSkillFromGroup(group.id, skill)}
+            />
+          </div>
+        );
+      })}
+      <AddButton
+        label="Add Skill Group"
+        onClick={() => setGroups((current) => [...current, emptyManualSkillGroup()])}
+      />
     </div>
   );
 }

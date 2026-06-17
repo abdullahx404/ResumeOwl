@@ -1,4 +1,6 @@
 const actionVerbs = ["Built", "Designed", "Implemented", "Integrated", "Improved", "Created"];
+const leadingActionPattern =
+  /^(built|build|designed|design|implemented|implement|integrated|integrate|improved|improve|created|create|developed|develop|architected|architect|engineered|engineer|made|make)\s+/i;
 
 function cleanNotes(notes: string): string[] {
   return notes
@@ -34,7 +36,10 @@ export function generateLocalBullets({
 
   return Array.from({ length: safeCount }, (_, index) => {
     const verb = actionVerbs[index % actionVerbs.length];
-    const detail = base[index % base.length].replace(/^\w/, (char) => char.toLowerCase());
+    const detail = base[index % base.length]
+      .replace(/^[-*•]\s*/, "")
+      .replace(leadingActionPattern, "")
+      .replace(/^\w/, (char) => char.toLowerCase());
     const stack = tech ? ` using ${tech}` : "";
 
     if (index === 0) {

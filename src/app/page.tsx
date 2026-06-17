@@ -32,11 +32,11 @@ export default function HomePage() {
               ResumeOwl
             </p>
             <h1 className="mt-2 max-w-3xl text-4xl font-semibold tracking-normal text-ink">
-              Private resume tooling without accounts or permanent storage.
+              Private resume tooling without accounts or database storage.
             </h1>
           </div>
           <p className="max-w-sm rounded-full border border-owl-100 bg-owl-50 px-4 py-2 text-sm font-medium text-owl-900">
-            Data stays in the active browser session unless you download it.
+            Data stays saved only in this browser unless you clear site data.
           </p>
         </header>
 

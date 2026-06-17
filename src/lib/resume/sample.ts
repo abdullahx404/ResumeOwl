@@ -45,7 +45,7 @@ export const sampleResume: ResumeDocument = {
       techStack: ["Next.js", "TypeScript", "Tailwind CSS"],
       bullets: [
         "Built a resume preview workflow with editable sections and print-focused styling.",
-        "Designed privacy-first state handling so resume data stays in the active browser session.",
+        "Designed privacy-first state handling so resume data stays local to the user's browser.",
         "Created reusable validation schemas for resume sections and contact details.",
       ],
     },

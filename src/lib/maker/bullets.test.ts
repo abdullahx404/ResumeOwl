@@ -27,6 +27,19 @@ describe("maker bullets", () => {
     ).toHaveLength(6);
   });
 
+  it("does not duplicate leading action verbs in fallback bullets", () => {
+    const bullets = generateLocalBullets({
+      name: "Oppassum",
+      notes: "Developed a browser-based file sharing platform used by 1000+ users",
+      techStack: ["Next.js"],
+      count: 2,
+      sectionType: "project",
+    });
+
+    expect(bullets[0]).toContain("Built a browser-based file sharing platform");
+    expect(bullets[0]).not.toContain("Built developed");
+  });
+
   it("parses comma lists", () => {
     expect(parseCommaList("React, TypeScript\nSQL")).toEqual(["React", "TypeScript", "SQL"]);
   });

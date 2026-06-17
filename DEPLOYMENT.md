@@ -113,7 +113,7 @@ After deployment, test:
 
 ## 6. Privacy Notes
 
-ResumeOwl itself does not use login, database storage, or permanent resume history.
+ResumeOwl itself does not use login or database storage. User profile and latest resume drafts can be saved in the user's own browser storage until they clear browser history or site data.
 
 Gemini free-tier API usage is different: Google states unpaid Gemini API quota may be used to improve Google products, and human reviewers may process API input/output. For production with real resume data, the more privacy-aligned choice is a paid Gemini API project with billing enabled.
 

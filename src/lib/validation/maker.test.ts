@@ -10,6 +10,7 @@ describe("maker validation", () => {
         techStack: ["Next.js"],
         count: 3,
         sectionType: "project",
+        generationFocus: "Use only real metrics from the notes.",
       }).success,
     ).toBe(true);
   });
