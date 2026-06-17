@@ -1,4 +1,5 @@
 import type { ResumeDocument } from "@/types/resume";
+import { formatResumeDateRange } from "./dates";
 
 function escapeLatex(value: string): string {
   return value
@@ -44,7 +45,7 @@ export function createLatexStyleSource(resume: ResumeDocument): string {
       for (const education of resume.education) {
         lines.push(
           `\\textbf{${escapeLatex(education.institute)}} \\hfill ${escapeLatex(
-            [education.startDate, education.endDate].filter(Boolean).join(" -- "),
+            formatResumeDateRange(education.startDate, education.endDate).replace(" - ", " -- "),
           )}`,
           `${escapeLatex(education.degree)}${education.cgpa ? `, CGPA ${escapeLatex(education.cgpa)}` : ""}`,
         );
@@ -53,7 +54,7 @@ export function createLatexStyleSource(resume: ResumeDocument): string {
         }
       }
       if (resume.courses.length) {
-        lines.push(`\\textbf{Relevant courses}: ${escapeLatex(resume.courses.join(", "))}`);
+        lines.push(`\\textbf{Relevant Courses}: ${escapeLatex(resume.courses.join(", "))}`);
       }
       lines.push("");
     }
@@ -83,7 +84,7 @@ export function createLatexStyleSource(resume: ResumeDocument): string {
       for (const experience of resume.experience) {
         lines.push(
           `\\textbf{${escapeLatex(experience.role)}} -- ${escapeLatex(experience.company)} \\hfill ${escapeLatex(
-            [experience.startDate, experience.endDate].filter(Boolean).join(" -- "),
+            formatResumeDateRange(experience.startDate, experience.endDate).replace(" - ", " -- "),
           )}`,
           "\\begin{itemize}",
           bullets(experience.bullets),

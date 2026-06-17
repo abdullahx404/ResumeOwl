@@ -5,6 +5,7 @@ import {
   Paragraph,
   TextRun,
 } from "docx";
+import { formatResumeDateRange } from "@/lib/resume/dates";
 import type { ResumeDocument, ResumeSectionId } from "@/types/resume";
 
 function heading(text: string) {
@@ -79,7 +80,7 @@ export function buildDocxDocument(resume: ResumeDocument): Document {
             children: [
               new TextRun({ text: item.institute, bold: true }),
               new TextRun({
-                text: ` ${[item.startDate, item.endDate].filter(Boolean).join(" - ")}`,
+                text: ` ${formatResumeDateRange(item.startDate, item.endDate)}`,
               }),
             ],
           }),
@@ -88,7 +89,7 @@ export function buildDocxDocument(resume: ResumeDocument): Document {
         item.details?.forEach((detail) => children.push(bullet(detail)));
       }
       if (resume.courses.length) {
-        children.push(new Paragraph(`Relevant courses: ${resume.courses.join(", ")}`));
+        children.push(new Paragraph(`Relevant Courses: ${resume.courses.join(", ")}`));
       }
     }
 
@@ -118,7 +119,7 @@ export function buildDocxDocument(resume: ResumeDocument): Document {
             children: [
               new TextRun({ text: `${item.role}, ${item.company}`, bold: true }),
               new TextRun({
-                text: ` ${[item.startDate, item.endDate].filter(Boolean).join(" - ")}`,
+                text: ` ${formatResumeDateRange(item.startDate, item.endDate)}`,
               }),
             ],
           }),

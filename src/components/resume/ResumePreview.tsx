@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, Copy, Download, FileDown, Printer, RotateCcw, Trash
 import { useMemo, useState } from "react";
 import { downloadBlob, downloadTextFile, safeFileName } from "@/lib/export/filenames";
 import { createLatexStyleSource } from "@/lib/resume/source";
+import { formatResumeDateRange } from "@/lib/resume/dates";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/stores/resume-store";
 import type { ResumeSectionId } from "@/types/resume";
@@ -286,7 +287,7 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
             <div className="flex flex-wrap justify-between gap-2 text-sm">
               <strong>{item.institute}</strong>
               <span className="text-slate-600">
-                {[item.startDate, item.endDate].filter(Boolean).join(" - ")}
+                {formatResumeDateRange(item.startDate, item.endDate)}
               </span>
             </div>
             <p className="text-sm text-slate-700">
@@ -298,7 +299,7 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
         ))}
         {resume.courses.length ? (
           <p className="text-sm text-slate-700">
-            <strong>Relevant courses:</strong> {resume.courses.join(", ")}
+            <strong>Relevant Courses:</strong> {resume.courses.join(", ")}
           </p>
         ) : null}
       </div>
@@ -343,7 +344,7 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
                 {item.role}, {item.company}
               </strong>
               <span className="text-slate-600">
-                {[item.startDate, item.endDate].filter(Boolean).join(" - ")}
+                {formatResumeDateRange(item.startDate, item.endDate)}
               </span>
             </div>
             <BulletList items={item.bullets} />

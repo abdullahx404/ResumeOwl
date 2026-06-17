@@ -8,7 +8,9 @@ import {
 } from "@/lib/validation/maker";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 10;
+
+const bulletGenerationTimeoutMs = 7000;
 
 function buildPrompt(input: ReturnType<typeof bulletGenerationRequestSchema.parse>) {
   return `
@@ -55,7 +57,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const raw = await generateAiText(buildPrompt(parsed.data));
+    const raw = await generateAiText(buildPrompt(parsed.data), {
+      timeoutMs: bulletGenerationTimeoutMs,
+    });
     const json = extractJsonObject(raw);
     const result = bulletGenerationResponseSchema.parse(json);
 

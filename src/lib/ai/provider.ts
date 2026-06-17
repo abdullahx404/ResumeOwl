@@ -50,13 +50,13 @@ type ChatResponse = {
   }>;
 };
 
-async function callGemini(config: AiProviderConfig, prompt: string): Promise<string> {
+async function callGemini(config: AiProviderConfig, prompt: string, signal?: AbortSignal): Promise<string> {
   const models = [...new Set([config.model, "gemini-2.5-flash", "gemini-flash-latest"])];
   let lastError: Error | null = null;
 
   for (const model of models) {
     try {
-      return await callGeminiModel({ ...config, model }, prompt);
+      return await callGeminiModel({ ...config, model }, prompt, signal);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error("AI provider request failed.");
     }
@@ -65,11 +65,12 @@ async function callGemini(config: AiProviderConfig, prompt: string): Promise<str
   throw lastError ?? new Error("AI provider request failed.");
 }
 
-async function callGeminiModel(config: AiProviderConfig, prompt: string): Promise<string> {
+async function callGeminiModel(config: AiProviderConfig, prompt: string, signal?: AbortSignal): Promise<string> {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${config.apiKey}`,
     {
       method: "POST",
+      signal,
       headers: {
         "Content-Type": "application/json",
       },
@@ -102,7 +103,7 @@ async function callGeminiModel(config: AiProviderConfig, prompt: string): Promis
   return text;
 }
 
-async function callChatProvider(config: AiProviderConfig, prompt: string): Promise<string> {
+async function callChatProvider(config: AiProviderConfig, prompt: string, signal?: AbortSignal): Promise<string> {
   const endpoint =
     config.provider === "groq"
       ? "https://api.groq.com/openai/v1/chat/completions"
@@ -119,6 +120,7 @@ async function callChatProvider(config: AiProviderConfig, prompt: string): Promi
 
   const response = await fetch(endpoint, {
     method: "POST",
+    signal,
     headers,
     body: JSON.stringify({
       model: config.model,
@@ -156,16 +158,25 @@ export function hasAiProvider(): boolean {
   return providerFromEnv() !== null;
 }
 
-export async function generateAiText(prompt: string): Promise<string> {
+export async function generateAiText(prompt: string, options: { timeoutMs?: number } = {}): Promise<string> {
   const config = providerFromEnv();
 
   if (!config) {
     throw new Error("AI is not configured.");
   }
 
-  if (config.provider === "gemini") {
-    return callGemini(config, prompt);
-  }
+  const controller = options.timeoutMs ? new AbortController() : null;
+  const timeout = controller ? setTimeout(() => controller.abort(), options.timeoutMs) : null;
 
-  return callChatProvider(config, prompt);
+  try {
+    if (config.provider === "gemini") {
+      return await callGemini(config, prompt, controller?.signal);
+    }
+
+    return await callChatProvider(config, prompt, controller?.signal);
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
 }
