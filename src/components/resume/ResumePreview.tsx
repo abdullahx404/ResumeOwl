@@ -256,6 +256,11 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
             {item.details?.length ? <BulletList items={item.details} /> : null}
           </div>
         ))}
+        {resume.courses.length ? (
+          <p className="text-sm text-slate-700">
+            <strong>Relevant courses:</strong> {resume.courses.join(", ")}
+          </p>
+        ) : null}
       </div>
     );
   }

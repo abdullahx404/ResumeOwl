@@ -52,6 +52,9 @@ export function createLatexStyleSource(resume: ResumeDocument): string {
           lines.push("\\begin{itemize}", bullets(education.details), "\\end{itemize}");
         }
       }
+      if (resume.courses.length) {
+        lines.push(`\\textbf{Relevant courses}: ${escapeLatex(resume.courses.join(", "))}`);
+      }
       lines.push("");
     }
 
