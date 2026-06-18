@@ -97,7 +97,7 @@ function emptyProject(): ProjectDraft {
     linkLabel: "",
     notes: "",
     techStack: "",
-    bulletCount: 4,
+    bulletCount: 3,
     bullets: [],
   };
 }
@@ -146,10 +146,9 @@ export function MakerWorkspace() {
   ]);
   const [projectGeneratingIds, setProjectGeneratingIds] = useState<string[]>([]);
   const [projectExtractingIds, setProjectExtractingIds] = useState<string[]>([]);
-  const [projectPolishingIds, setProjectPolishingIds] = useState<string[]>([]);
   const [experienceGeneratingIds, setExperienceGeneratingIds] = useState<string[]>([]);
-  const [experiencePolishingIds, setExperiencePolishingIds] = useState<string[]>([]);
   const [optionalConvertingIds, setOptionalConvertingIds] = useState<string[]>([]);
+  const [optionalPolishingIds, setOptionalPolishingIds] = useState<string[]>([]);
   const [isPolishingSummary, setIsPolishingSummary] = useState(false);
   const [education, setEducation] = useState<EducationEntry[]>([emptyEducation()]);
   const [projects, setProjects] = useState<ProjectDraft[]>([emptyProject()]);
@@ -244,7 +243,7 @@ export function MakerWorkspace() {
       name: project.name,
       notes: project.notes,
       techStack: parseCommaList(project.techStack),
-      count: Math.max(4, Math.min(5, project.bulletCount)),
+      count: Math.max(3, Math.min(6, project.bulletCount)),
       sectionType: "project" as const,
     };
 
@@ -285,49 +284,6 @@ export function MakerWorkspace() {
       flash("AI generation failed or provider limit reached.");
     } finally {
       setProjectGeneratingIds((current) => current.filter((id) => id !== project.id));
-    }
-  }
-
-  async function polishProjectBullets(project: ProjectDraft) {
-    const currentBullets = project.bullets.map((bullet) => bullet.trim()).filter(Boolean);
-
-    if (!currentBullets.length) {
-      flash("Generate or add project bullets first.");
-      return;
-    }
-
-    const payload = {
-      name: project.name,
-      notes: currentBullets.join("\n"),
-      techStack: parseCommaList(project.techStack),
-      count: Math.max(2, Math.min(6, currentBullets.length)),
-      sectionType: "project" as const,
-    };
-
-    setProjectPolishingIds((current) => addUniqueValue(current, project.id));
-
-    try {
-      const response = await fetch("/api/ai/generate-bullets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = (await response.json()) as { bullets?: string[]; configured?: boolean; error?: string };
-
-      if (!response.ok || !data.bullets?.length) {
-        flash(data.error || "AI generation failed or provider limit reached.");
-        return;
-      }
-
-      const bullets = data.bullets;
-      setProjects((current) =>
-        current.map((item) => (item.id === project.id ? { ...item, bullets } : item)),
-      );
-      flash(data.configured === false ? "AI generation unavailable." : "Bullets polished.");
-    } catch {
-      flash("AI generation failed or provider limit reached.");
-    } finally {
-      setProjectPolishingIds((current) => current.filter((id) => id !== project.id));
     }
   }
 
@@ -417,49 +373,6 @@ export function MakerWorkspace() {
     }
   }
 
-  async function polishExperienceBullets(item: ExperienceDraft) {
-    const currentBullets = item.bullets.map((bullet) => bullet.trim()).filter(Boolean);
-
-    if (!currentBullets.length) {
-      flash("Generate or add experience bullets first.");
-      return;
-    }
-
-    const payload = {
-      name: item.role || "Experience",
-      notes: currentBullets.join("\n"),
-      techStack: [],
-      count: Math.max(2, Math.min(6, currentBullets.length)),
-      sectionType: "experience" as const,
-    };
-
-    setExperiencePolishingIds((current) => addUniqueValue(current, item.id));
-
-    try {
-      const response = await fetch("/api/ai/generate-bullets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = (await response.json()) as { bullets?: string[]; configured?: boolean; error?: string };
-
-      if (!response.ok || !data.bullets?.length) {
-        flash(data.error || "AI generation failed or provider limit reached.");
-        return;
-      }
-
-      const bullets = data.bullets;
-      setExperience((current) =>
-        current.map((entry) => (entry.id === item.id ? { ...entry, bullets } : entry)),
-      );
-      flash(data.configured === false ? "AI generation unavailable." : "Bullets polished.");
-    } catch {
-      flash("AI generation failed or provider limit reached.");
-    } finally {
-      setExperiencePolishingIds((current) => current.filter((id) => id !== item.id));
-    }
-  }
-
   function buildSkillGroups(): SkillGroup[] {
     if (skillMode === "none") {
       return skills.length ? [{ id: "skills-all", name: "Skills", skills }] : [];
@@ -492,6 +405,49 @@ export function MakerWorkspace() {
     );
     setOptionalConvertingIds((current) => current.filter((id) => id !== section.id));
     flash("Optional section converted to bullets.");
+  }
+
+  async function polishOptionalSection(section: OptionalSection) {
+    const currentItems = section.items.map((item) => item.trim()).filter(Boolean);
+
+    if (!currentItems.length) {
+      flash("Please add optional section text first.");
+      return;
+    }
+
+    const payload = {
+      name: section.title || "Optional Section",
+      notes: currentItems.join("\n"),
+      techStack: [],
+      count: Math.max(3, Math.min(6, currentItems.length)),
+      sectionType: "experience" as const,
+    };
+
+    setOptionalPolishingIds((current) => addUniqueValue(current, section.id));
+
+    try {
+      const response = await fetch("/api/ai/generate-bullets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = (await response.json()) as { bullets?: string[]; configured?: boolean; error?: string };
+
+      if (!response.ok || !data.bullets?.length) {
+        flash(data.error || "AI generation failed or provider limit reached.");
+        return;
+      }
+
+      const bullets = data.bullets;
+      setOptionalSections((current) =>
+        current.map((item) => (item.id === section.id ? { ...item, items: bullets } : item)),
+      );
+      flash(data.configured === false ? "AI generation unavailable." : "Optional section polished.");
+    } catch {
+      flash("AI generation failed or provider limit reached.");
+    } finally {
+      setOptionalPolishingIds((current) => current.filter((id) => id !== section.id));
+    }
   }
 
   function buildResumeDocument(): ResumeDocument {
@@ -661,10 +617,8 @@ export function MakerWorkspace() {
                   setProjects={setProjects}
                   isExtracting={projectExtractingIds.includes(project.id)}
                   isGenerating={projectGeneratingIds.includes(project.id)}
-                  isPolishing={projectPolishingIds.includes(project.id)}
                   onExtractTech={() => extractTechStackForProject(project)}
                   onGenerate={() => generateBulletsForProject(project)}
-                  onPolish={() => polishProjectBullets(project)}
                 />
               ))}
             </div>
@@ -674,7 +628,7 @@ export function MakerWorkspace() {
           <Panel title="Experience">
             <div className="space-y-3">
               {experience.map((item) => (
-                <ExperienceEditor key={item.id} item={item} setExperience={setExperience} isGenerating={experienceGeneratingIds.includes(item.id)} isPolishing={experiencePolishingIds.includes(item.id)} onGenerate={() => generateBulletsForExperience(item)} onPolish={() => polishExperienceBullets(item)} />
+                <ExperienceEditor key={item.id} item={item} setExperience={setExperience} isGenerating={experienceGeneratingIds.includes(item.id)} onGenerate={() => generateBulletsForExperience(item)} />
               ))}
             </div>
             <AddButton label="Add Experience" onClick={() => setExperience((current) => [...current, emptyExperience()])} />
@@ -686,10 +640,16 @@ export function MakerWorkspace() {
                 <div key={section.id} className="rounded-md border border-slate-200 p-3">
                   <TextField label="Section Title" value={section.title} onChange={(value) => setOptionalSections((current) => current.map((item) => item.id === section.id ? { ...item, title: value } : item))} />
                   <textarea aria-label={`${section.title} plain text or bullets`} className="mt-3 min-h-20 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={section.items.join("\n")} onChange={(event) => setOptionalSections((current) => current.map((item) => item.id === section.id ? { ...item, items: event.target.value.split("\n") } : item))} />
-                  <button type="button" className="mt-3 inline-flex min-w-40 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-70" onClick={() => convertOptionalSection(section)} disabled={optionalConvertingIds.includes(section.id)}>
-                    {optionalConvertingIds.includes(section.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                    {optionalConvertingIds.includes(section.id) ? "Converting..." : "Convert To Bullets"}
-                  </button>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-70" onClick={() => convertOptionalSection(section)} disabled={optionalConvertingIds.includes(section.id) || optionalPolishingIds.includes(section.id)}>
+                      {optionalConvertingIds.includes(section.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      {optionalConvertingIds.includes(section.id) ? "Converting..." : "Convert To Bullets"}
+                    </button>
+                    <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md bg-owl-700 px-3 py-2 text-sm font-semibold text-white hover:bg-owl-900 disabled:cursor-wait disabled:opacity-75" onClick={() => polishOptionalSection(section)} disabled={optionalConvertingIds.includes(section.id) || optionalPolishingIds.includes(section.id)}>
+                      {optionalPolishingIds.includes(section.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      {optionalPolishingIds.includes(section.id) ? "Polishing..." : "Polish Bullets"}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -903,19 +863,15 @@ function ProjectEditor({
   setProjects,
   isExtracting,
   isGenerating,
-  isPolishing,
   onExtractTech,
   onGenerate,
-  onPolish,
 }: {
   project: ProjectDraft;
   setProjects: React.Dispatch<React.SetStateAction<ProjectDraft[]>>;
   isExtracting: boolean;
   isGenerating: boolean;
-  isPolishing: boolean;
   onExtractTech: () => void;
   onGenerate: () => void;
-  onPolish: () => void;
 }) {
   return (
     <div className="rounded-md border border-slate-200 p-3">
@@ -924,16 +880,14 @@ function ProjectEditor({
         <TextField label={<TitleWithHint title="Link Name" hint="optional" />} value={project.linkLabel} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, linkLabel: value } : item))} />
         <TextField label={<TitleWithHint title="Link Address" hint="optional" />} value={project.link} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, link: value } : item))} />
         <TextField label={<TitleWithHint title="Add Tech Stack" hint="optional" />} value={project.techStack} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, techStack: value } : item))} />
-        <label className="block text-sm font-medium text-slate-700">Bullet Count<select className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" value={project.bulletCount} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, bulletCount: Number(event.target.value) } : item))}>{[4, 5].map((count) => <option key={count}>{count}</option>)}</select></label>
+        <label className="block text-sm font-medium text-slate-700">Bullet Count<select className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" value={project.bulletCount} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, bulletCount: Number(event.target.value) } : item))}>{[3, 4, 5, 6].map((count) => <option key={count}>{count}</option>)}</select></label>
       </div>
       <textarea aria-label="Project details or description" className="mt-3 min-h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={project.notes} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, notes: event.target.value } : item))} placeholder="Paste project details. Add the project name above; ResumeOwl can extract tech stack and generate editable bullets." />
       <EditorButtons
         isExtracting={isExtracting}
         isGenerating={isGenerating}
-        isPolishing={isPolishing}
         onExtractTech={onExtractTech}
         onGenerate={onGenerate}
-        onPolish={onPolish}
         onRemove={() => setProjects((current) => current.filter((item) => item.id !== project.id))}
       />
       <BulletEditor bullets={project.bullets} setBullets={(bullets) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, bullets } : item))} />
@@ -941,7 +895,7 @@ function ProjectEditor({
   );
 }
 
-function ExperienceEditor({ item, setExperience, isGenerating, isPolishing, onGenerate, onPolish }: { item: ExperienceDraft; setExperience: React.Dispatch<React.SetStateAction<ExperienceDraft[]>>; isGenerating: boolean; isPolishing: boolean; onGenerate: () => void; onPolish: () => void }) {
+function ExperienceEditor({ item, setExperience, isGenerating, onGenerate }: { item: ExperienceDraft; setExperience: React.Dispatch<React.SetStateAction<ExperienceDraft[]>>; isGenerating: boolean; onGenerate: () => void }) {
   return (
     <div className="rounded-md border border-slate-200 p-3">
       <div className="grid gap-3 md:grid-cols-2">
@@ -949,9 +903,10 @@ function ExperienceEditor({ item, setExperience, isGenerating, isPolishing, onGe
         <TextField label="Company" value={item.company} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, company: value } : entry))} />
         <TextField type="month" label="Start Month/Year" value={item.startDate} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, startDate: value } : entry))} />
         <TextField type="month" label="End Month/Year" value={item.endDate} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, endDate: value } : entry))} />
+        <label className="block text-sm font-medium text-slate-700">Bullet Count<select className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" value={item.bulletCount} onChange={(event) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, bulletCount: Number(event.target.value) } : entry))}>{[3, 4, 5, 6].map((count) => <option key={count}>{count}</option>)}</select></label>
       </div>
       <textarea className="mt-3 min-h-24 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={item.notes} onChange={(event) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, notes: event.target.value } : entry))} placeholder="What did you do?" />
-      <EditorButtons isGenerating={isGenerating} isPolishing={isPolishing} onGenerate={onGenerate} onPolish={onPolish} onRemove={() => setExperience((current) => current.filter((entry) => entry.id !== item.id))} />
+      <EditorButtons isGenerating={isGenerating} onGenerate={onGenerate} onRemove={() => setExperience((current) => current.filter((entry) => entry.id !== item.id))} />
       <BulletEditor bullets={item.bullets} setBullets={(bullets) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, bullets } : entry))} />
     </div>
   );
@@ -960,37 +915,27 @@ function ExperienceEditor({ item, setExperience, isGenerating, isPolishing, onGe
 function EditorButtons({
   isExtracting = false,
   isGenerating,
-  isPolishing = false,
   onExtractTech,
   onGenerate,
-  onPolish,
   onRemove,
 }: {
   isExtracting?: boolean;
   isGenerating: boolean;
-  isPolishing?: boolean;
   onExtractTech?: () => void;
   onGenerate: () => void;
-  onPolish: () => void;
   onRemove: () => void;
 }) {
-  const isBusy = isGenerating || isPolishing;
-
   return (
     <div className="mt-3 flex flex-wrap gap-2">
       {onExtractTech ? (
-        <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-75" onClick={onExtractTech} disabled={isExtracting || isBusy}>
+        <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-75" onClick={onExtractTech} disabled={isExtracting || isGenerating}>
           {isExtracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           {isExtracting ? "Extracting..." : "Extract Tech Stack"}
         </button>
       ) : null}
-      <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md bg-owl-700 px-3 py-2 text-sm font-semibold text-white hover:bg-owl-900 disabled:cursor-wait disabled:opacity-75" onClick={onGenerate} disabled={isBusy}>
+      <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md bg-owl-700 px-3 py-2 text-sm font-semibold text-white hover:bg-owl-900 disabled:cursor-wait disabled:opacity-75" onClick={onGenerate} disabled={isGenerating}>
         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
         {isGenerating ? "Generating..." : "Generate Bullets"}
-      </button>
-      <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-75" onClick={onPolish} disabled={isBusy}>
-        {isPolishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-        {isPolishing ? "Polishing..." : "Polish Bullets"}
       </button>
       <button type="button" className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={onRemove}>
         Remove
@@ -1070,7 +1015,7 @@ function paginatePreviewSections(resume: ResumeDocument): PreviewPage[] {
   const sections = buildPreviewSections(resume);
   const pages: PreviewPage[] = [{ key: "preview-page-1", sections: [] }];
   let currentWeight = 5;
-  const maxWeight = 28;
+  const maxWeight = 40;
 
   for (const section of sections) {
     if (pages.at(-1)?.sections.length && currentWeight + section.weight > maxWeight) {
