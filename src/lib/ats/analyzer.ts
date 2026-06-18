@@ -66,6 +66,7 @@ const ignoredRequiredSkillFragments = new Set([
   "and javascript",
   "or angular",
   "or similar",
+  "required skills",
 ]);
 
 const skillVocabulary = [...new Set([...commonSkills, ...commonCourses, ...extraSkillTerms])].sort(
@@ -96,6 +97,28 @@ const canonicalSkillLabels = new Map<string, string>([
 function canonicalSkillLabel(term: string): string {
   const normalized = normalizeText(term);
   return canonicalSkillLabels.get(normalized) ?? term;
+}
+
+const skillPresenceAliases = new Map<string, string[]>([
+  ["backend development", ["backend", "back-end", "back end", "server-side", "node.js", "express.js"]],
+  ["frontend", ["frontend", "front-end", "front end", "react", "angular", "vue", "html", "css"]],
+  ["front-end frameworks", ["react", "angular", "vue", "next.js", "frontend", "front-end"]],
+  ["database management", ["database", "sql", "mysql", "postgresql", "mongodb"]],
+  ["version control", ["git", "github", "git/github", "git and github"]],
+  ["git and github", ["git", "github", "git/github", "git & github"]],
+  ["responsive web design", ["responsive", "html", "css", "tailwind css", "bootstrap"]],
+  ["basic cloud and deployment knowledge", ["cloud", "aws", "azure", "gcp", "vercel", "deployment"]],
+]);
+
+function hasSkillTerm(text: string, term: string): boolean {
+  if (hasTerm(text, term)) {
+    return true;
+  }
+
+  const canonical = normalizeText(canonicalSkillLabel(term));
+  const aliases = skillPresenceAliases.get(canonical) ?? [];
+
+  return aliases.some((alias) => hasTerm(text, alias));
 }
 
 function detectSections(resumeText: string): string[] {
@@ -172,7 +195,7 @@ function extractSkillKeywords(text: string): string[] {
   return uniqueTerms(
     skillVocabulary.filter((term) => {
       const normalized = normalizeText(term);
-      return normalized.length > 2 && hasTerm(text, normalized);
+      return normalized.length > 2 && hasSkillTerm(text, normalized);
     }),
   );
 }
@@ -188,7 +211,7 @@ function normalizeRequiredSkills(requiredSkills: string[], jobDescription: strin
     })
     .flatMap((skill) => {
       const matchedKnownTerms = skillVocabulary.filter(
-        (term) => normalizeText(term).length > 2 && hasTerm(skill, term),
+        (term) => normalizeText(term).length > 2 && hasSkillTerm(skill, term),
       );
       return matchedKnownTerms.length ? matchedKnownTerms : [skill];
     });
@@ -318,13 +341,16 @@ export function analyzeResumeLocally({
   requiredSkills?: string[];
 }): AnalysisResult {
   const jobKeywords = extractSkillKeywords(jobDescription);
-  const matchedKeywords = jobKeywords.filter((keyword) => hasTerm(resumeText, keyword));
-  const missingKeywords = jobKeywords.filter((keyword) => !hasTerm(resumeText, keyword));
+  const matchedKeywords = uniqueTerms(jobKeywords.filter((keyword) => hasSkillTerm(resumeText, keyword)));
   const requiredSkillMatches = normalizeRequiredSkills(requiredSkills, jobDescription)
     .map((skill) => ({
       keyword: skill,
-      present: hasTerm(resumeText, skill),
+      present: hasSkillTerm(resumeText, skill),
     }));
+  const missingKeywords = uniqueTerms([
+    ...jobKeywords.filter((keyword) => !hasSkillTerm(resumeText, keyword)),
+    ...requiredSkillMatches.filter((skill) => !skill.present).map((skill) => skill.keyword),
+  ]);
   const detectedSections = detectSections(resumeText);
   const missingSections = Object.keys(sectionPatterns).filter(
     (section) => !detectedSections.includes(section),

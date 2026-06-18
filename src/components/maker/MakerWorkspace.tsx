@@ -146,7 +146,9 @@ export function MakerWorkspace() {
   ]);
   const [projectGeneratingIds, setProjectGeneratingIds] = useState<string[]>([]);
   const [projectExtractingIds, setProjectExtractingIds] = useState<string[]>([]);
+  const [projectPolishingIds, setProjectPolishingIds] = useState<string[]>([]);
   const [experienceGeneratingIds, setExperienceGeneratingIds] = useState<string[]>([]);
+  const [experiencePolishingIds, setExperiencePolishingIds] = useState<string[]>([]);
   const [optionalConvertingIds, setOptionalConvertingIds] = useState<string[]>([]);
   const [isPolishingSummary, setIsPolishingSummary] = useState(false);
   const [education, setEducation] = useState<EducationEntry[]>([emptyEducation()]);
@@ -286,6 +288,49 @@ export function MakerWorkspace() {
     }
   }
 
+  async function polishProjectBullets(project: ProjectDraft) {
+    const currentBullets = project.bullets.map((bullet) => bullet.trim()).filter(Boolean);
+
+    if (!currentBullets.length) {
+      flash("Generate or add project bullets first.");
+      return;
+    }
+
+    const payload = {
+      name: project.name,
+      notes: currentBullets.join("\n"),
+      techStack: parseCommaList(project.techStack),
+      count: Math.max(2, Math.min(6, currentBullets.length)),
+      sectionType: "project" as const,
+    };
+
+    setProjectPolishingIds((current) => addUniqueValue(current, project.id));
+
+    try {
+      const response = await fetch("/api/ai/generate-bullets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = (await response.json()) as { bullets?: string[]; configured?: boolean; error?: string };
+
+      if (!response.ok || !data.bullets?.length) {
+        flash(data.error || "AI generation failed or provider limit reached.");
+        return;
+      }
+
+      const bullets = data.bullets;
+      setProjects((current) =>
+        current.map((item) => (item.id === project.id ? { ...item, bullets } : item)),
+      );
+      flash(data.configured === false ? "AI generation unavailable." : "Bullets polished.");
+    } catch {
+      flash("AI generation failed or provider limit reached.");
+    } finally {
+      setProjectPolishingIds((current) => current.filter((id) => id !== project.id));
+    }
+  }
+
   function extractTechStackForProject(project: ProjectDraft) {
     if (!project.notes.trim()) {
       flash("Please provide a project description first.");
@@ -369,6 +414,49 @@ export function MakerWorkspace() {
       flash("AI generation failed or provider limit reached.");
     } finally {
       setExperienceGeneratingIds((current) => current.filter((id) => id !== item.id));
+    }
+  }
+
+  async function polishExperienceBullets(item: ExperienceDraft) {
+    const currentBullets = item.bullets.map((bullet) => bullet.trim()).filter(Boolean);
+
+    if (!currentBullets.length) {
+      flash("Generate or add experience bullets first.");
+      return;
+    }
+
+    const payload = {
+      name: item.role || "Experience",
+      notes: currentBullets.join("\n"),
+      techStack: [],
+      count: Math.max(2, Math.min(6, currentBullets.length)),
+      sectionType: "experience" as const,
+    };
+
+    setExperiencePolishingIds((current) => addUniqueValue(current, item.id));
+
+    try {
+      const response = await fetch("/api/ai/generate-bullets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = (await response.json()) as { bullets?: string[]; configured?: boolean; error?: string };
+
+      if (!response.ok || !data.bullets?.length) {
+        flash(data.error || "AI generation failed or provider limit reached.");
+        return;
+      }
+
+      const bullets = data.bullets;
+      setExperience((current) =>
+        current.map((entry) => (entry.id === item.id ? { ...entry, bullets } : entry)),
+      );
+      flash(data.configured === false ? "AI generation unavailable." : "Bullets polished.");
+    } catch {
+      flash("AI generation failed or provider limit reached.");
+    } finally {
+      setExperiencePolishingIds((current) => current.filter((id) => id !== item.id));
     }
   }
 
@@ -573,8 +661,10 @@ export function MakerWorkspace() {
                   setProjects={setProjects}
                   isExtracting={projectExtractingIds.includes(project.id)}
                   isGenerating={projectGeneratingIds.includes(project.id)}
+                  isPolishing={projectPolishingIds.includes(project.id)}
                   onExtractTech={() => extractTechStackForProject(project)}
                   onGenerate={() => generateBulletsForProject(project)}
+                  onPolish={() => polishProjectBullets(project)}
                 />
               ))}
             </div>
@@ -584,7 +674,7 @@ export function MakerWorkspace() {
           <Panel title="Experience">
             <div className="space-y-3">
               {experience.map((item) => (
-                <ExperienceEditor key={item.id} item={item} setExperience={setExperience} isGenerating={experienceGeneratingIds.includes(item.id)} onGenerate={() => generateBulletsForExperience(item)} />
+                <ExperienceEditor key={item.id} item={item} setExperience={setExperience} isGenerating={experienceGeneratingIds.includes(item.id)} isPolishing={experiencePolishingIds.includes(item.id)} onGenerate={() => generateBulletsForExperience(item)} onPolish={() => polishExperienceBullets(item)} />
               ))}
             </div>
             <AddButton label="Add Experience" onClick={() => setExperience((current) => [...current, emptyExperience()])} />
@@ -813,15 +903,19 @@ function ProjectEditor({
   setProjects,
   isExtracting,
   isGenerating,
+  isPolishing,
   onExtractTech,
   onGenerate,
+  onPolish,
 }: {
   project: ProjectDraft;
   setProjects: React.Dispatch<React.SetStateAction<ProjectDraft[]>>;
   isExtracting: boolean;
   isGenerating: boolean;
+  isPolishing: boolean;
   onExtractTech: () => void;
   onGenerate: () => void;
+  onPolish: () => void;
 }) {
   return (
     <div className="rounded-md border border-slate-200 p-3">
@@ -836,8 +930,10 @@ function ProjectEditor({
       <EditorButtons
         isExtracting={isExtracting}
         isGenerating={isGenerating}
+        isPolishing={isPolishing}
         onExtractTech={onExtractTech}
         onGenerate={onGenerate}
+        onPolish={onPolish}
         onRemove={() => setProjects((current) => current.filter((item) => item.id !== project.id))}
       />
       <BulletEditor bullets={project.bullets} setBullets={(bullets) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, bullets } : item))} />
@@ -845,7 +941,7 @@ function ProjectEditor({
   );
 }
 
-function ExperienceEditor({ item, setExperience, isGenerating, onGenerate }: { item: ExperienceDraft; setExperience: React.Dispatch<React.SetStateAction<ExperienceDraft[]>>; isGenerating: boolean; onGenerate: () => void }) {
+function ExperienceEditor({ item, setExperience, isGenerating, isPolishing, onGenerate, onPolish }: { item: ExperienceDraft; setExperience: React.Dispatch<React.SetStateAction<ExperienceDraft[]>>; isGenerating: boolean; isPolishing: boolean; onGenerate: () => void; onPolish: () => void }) {
   return (
     <div className="rounded-md border border-slate-200 p-3">
       <div className="grid gap-3 md:grid-cols-2">
@@ -855,7 +951,7 @@ function ExperienceEditor({ item, setExperience, isGenerating, onGenerate }: { i
         <TextField type="month" label="End Month/Year" value={item.endDate} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, endDate: value } : entry))} />
       </div>
       <textarea className="mt-3 min-h-24 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={item.notes} onChange={(event) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, notes: event.target.value } : entry))} placeholder="What did you do?" />
-      <EditorButtons isGenerating={isGenerating} onGenerate={onGenerate} onRemove={() => setExperience((current) => current.filter((entry) => entry.id !== item.id))} />
+      <EditorButtons isGenerating={isGenerating} isPolishing={isPolishing} onGenerate={onGenerate} onPolish={onPolish} onRemove={() => setExperience((current) => current.filter((entry) => entry.id !== item.id))} />
       <BulletEditor bullets={item.bullets} setBullets={(bullets) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, bullets } : entry))} />
     </div>
   );
@@ -864,27 +960,37 @@ function ExperienceEditor({ item, setExperience, isGenerating, onGenerate }: { i
 function EditorButtons({
   isExtracting = false,
   isGenerating,
+  isPolishing = false,
   onExtractTech,
   onGenerate,
+  onPolish,
   onRemove,
 }: {
   isExtracting?: boolean;
   isGenerating: boolean;
+  isPolishing?: boolean;
   onExtractTech?: () => void;
   onGenerate: () => void;
+  onPolish: () => void;
   onRemove: () => void;
 }) {
+  const isBusy = isGenerating || isPolishing;
+
   return (
     <div className="mt-3 flex flex-wrap gap-2">
       {onExtractTech ? (
-        <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-75" onClick={onExtractTech} disabled={isExtracting || isGenerating}>
+        <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-75" onClick={onExtractTech} disabled={isExtracting || isBusy}>
           {isExtracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           {isExtracting ? "Extracting..." : "Extract Tech Stack"}
         </button>
       ) : null}
-      <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md bg-owl-700 px-3 py-2 text-sm font-semibold text-white hover:bg-owl-900 disabled:cursor-wait disabled:opacity-75" onClick={onGenerate} disabled={isGenerating}>
+      <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md bg-owl-700 px-3 py-2 text-sm font-semibold text-white hover:bg-owl-900 disabled:cursor-wait disabled:opacity-75" onClick={onGenerate} disabled={isBusy}>
         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
         {isGenerating ? "Generating..." : "Generate Bullets"}
+      </button>
+      <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-75" onClick={onPolish} disabled={isBusy}>
+        {isPolishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+        {isPolishing ? "Polishing..." : "Polish Bullets"}
       </button>
       <button type="button" className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={onRemove}>
         Remove
@@ -912,130 +1018,194 @@ function TitleWithHint({ title, hint }: { title: string; hint: string }) {
 }
 
 function LiveResumePreview({ resume }: { resume: ResumeDocument }) {
+  const pages = paginatePreviewSections(resume);
+
   return (
-    <article className="min-h-[760px] rounded-lg border border-slate-200 bg-white px-5 py-6 shadow-soft sm:px-7 xl:h-[calc(100vh-3rem)] xl:min-h-0 xl:overflow-y-auto">
-      <header className="pb-3 text-center">
-        <h2 className="text-xl font-bold uppercase tracking-normal text-ink">
-          {resume.personal.fullName || "Your Name"}
-        </h2>
-        {resume.personal.title ? (
-          <p className="mt-1 text-xs font-medium text-slate-700">{resume.personal.title}</p>
-        ) : null}
-        <p className="mt-2 break-words text-[11px] text-slate-600">
-          {[
-            resume.personal.email,
-            resume.personal.phone,
-            resume.personal.location,
-            resume.personal.github,
-            resume.personal.linkedin,
-            resume.personal.portfolio,
-          ]
-            .filter(Boolean)
-            .join(" | ")}
-        </p>
-      </header>
-
-      {resume.summary?.trim() ? (
-        <PreviewSection title="Summary">
-          <p className="text-xs leading-5 text-slate-800">{resume.summary}</p>
-        </PreviewSection>
-      ) : null}
-
-      {resume.education.length ? (
-        <PreviewSection title="Education">
-          <div className="space-y-2">
-            {resume.education.map((item) => (
-              <div key={item.id}>
-                <div className="flex flex-wrap justify-between gap-2 text-xs">
-                  <strong>{item.institute}</strong>
-                  <span className="text-slate-600">
-                    {formatResumeDateRange(item.startDate, item.endDate)}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-700">
-                  {item.degree}
-                  {item.cgpa ? `, CGPA ${item.cgpa}` : ""}
-                </p>
-              </div>
-            ))}
-            {resume.courses.length ? (
-              <p className="text-xs text-slate-700">
-                <strong>Relevant Courses:</strong> {resume.courses.join(", ")}
-              </p>
-            ) : null}
-          </div>
-        </PreviewSection>
-      ) : null}
-
-      {resume.skillGroups.length ? (
-        <PreviewSection title="Skills">
-          <div className="space-y-1 text-xs">
-            {resume.skillGroups.map((group) => (
-              <p key={group.id}>
-                <strong>{group.name}:</strong> {group.skills.join(", ")}
-              </p>
-            ))}
-          </div>
-        </PreviewSection>
-      ) : null}
-
-      {resume.projects.length ? (
-        <PreviewSection title="Projects">
-          <div className="space-y-2">
-            {resume.projects.map((project) => (
-              <div key={project.id}>
-                <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
-                  <strong className="inline-flex flex-wrap items-baseline gap-1">
-                    {project.name}
-                    {project.link ? (
-                      <a className="font-medium italic text-slate-500 underline" href={normalizeExternalUrl(project.link)} target="_blank" rel="noreferrer">
-                        {project.linkLabel || "Link"}
-                      </a>
-                    ) : null}
-                  </strong>
-                  <span className="text-[11px] text-slate-600">{project.techStack?.join(", ")}</span>
-                </div>
-                <PreviewBullets items={project.bullets} />
-              </div>
-            ))}
-          </div>
-        </PreviewSection>
-      ) : null}
-
-      {resume.experience.length ? (
-        <PreviewSection title="Experience">
-          <div className="space-y-2">
-            {resume.experience.map((item) => (
-              <div key={item.id}>
-                <div className="flex flex-wrap justify-between gap-2 text-xs">
-                  <strong>
-                    {[item.role, item.company].filter(Boolean).join(", ")}
-                  </strong>
-                  <span className="text-slate-600">
-                    {formatResumeDateRange(item.startDate, item.endDate)}
-                  </span>
-                </div>
-                <PreviewBullets items={item.bullets} />
-              </div>
-            ))}
-          </div>
-        </PreviewSection>
-      ) : null}
-
-      {resume.optionalSections.length ? (
-        <PreviewSection title="Additional">
-          <div className="space-y-2">
-            {resume.optionalSections.map((section) => (
-              <div key={section.id}>
-                <h4 className="text-xs font-semibold text-slate-800">{section.title}</h4>
-                <PreviewBullets items={section.items} />
-              </div>
-            ))}
-          </div>
-        </PreviewSection>
-      ) : null}
-    </article>
+    <div className="space-y-4 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-scroll xl:pr-2">
+      {pages.map((page, index) => (
+        <article key={page.key} className="min-h-[760px] rounded-lg border border-slate-200 bg-white px-5 py-6 shadow-soft sm:px-7">
+          {index === 0 ? <PreviewHeader resume={resume} /> : null}
+          {page.sections.map((section) => (
+            <PreviewSection key={section.key} title={section.title}>
+              {section.content}
+            </PreviewSection>
+          ))}
+        </article>
+      ))}
+    </div>
   );
+}
+
+type PreviewPage = {
+  key: string;
+  sections: Array<{ key: string; title: string; content: React.ReactNode; weight: number }>;
+};
+
+function PreviewHeader({ resume }: { resume: ResumeDocument }) {
+  return (
+    <header className="pb-3 text-center">
+      <h2 className="text-xl font-bold uppercase tracking-normal text-ink">
+        {resume.personal.fullName || "Your Name"}
+      </h2>
+      {resume.personal.title ? (
+        <p className="mt-1 text-xs font-medium text-slate-700">{resume.personal.title}</p>
+      ) : null}
+      <p className="mt-2 break-words text-[11px] text-slate-600">
+        {[
+          resume.personal.email,
+          resume.personal.phone,
+          resume.personal.location,
+          resume.personal.github,
+          resume.personal.linkedin,
+          resume.personal.portfolio,
+        ]
+          .filter(Boolean)
+          .join(" | ")}
+      </p>
+    </header>
+  );
+}
+
+function paginatePreviewSections(resume: ResumeDocument): PreviewPage[] {
+  const sections = buildPreviewSections(resume);
+  const pages: PreviewPage[] = [{ key: "preview-page-1", sections: [] }];
+  let currentWeight = 5;
+  const maxWeight = 28;
+
+  for (const section of sections) {
+    if (pages.at(-1)?.sections.length && currentWeight + section.weight > maxWeight) {
+      pages.push({ key: `preview-page-${pages.length + 1}`, sections: [] });
+      currentWeight = 0;
+    }
+
+    pages[pages.length - 1].sections.push(section);
+    currentWeight += section.weight;
+  }
+
+  return pages.length ? pages : [{ key: "preview-page-1", sections: [] }];
+}
+
+function buildPreviewSections(resume: ResumeDocument): PreviewPage["sections"] {
+  const sections: PreviewPage["sections"] = [];
+
+  if (resume.summary?.trim()) {
+    sections.push({
+      key: "summary",
+      title: "Summary",
+      weight: 3 + Math.ceil(resume.summary.length / 140),
+      content: <p className="text-xs leading-5 text-slate-800">{resume.summary}</p>,
+    });
+  }
+
+  if (resume.education.length || resume.courses.length) {
+    sections.push({
+      key: "education",
+      title: "Education",
+      weight: 3 + resume.education.length * 3 + Math.ceil(resume.courses.join(", ").length / 120),
+      content: (
+        <div className="space-y-2">
+          {resume.education.map((item) => (
+            <div key={item.id}>
+              <div className="flex flex-wrap justify-between gap-2 text-xs">
+                <strong>{item.institute}</strong>
+                <span className="text-slate-600">
+                  {formatResumeDateRange(item.startDate, item.endDate)}
+                </span>
+              </div>
+              <p className="text-xs text-slate-700">
+                {item.degree}
+                {item.cgpa ? `, CGPA ${item.cgpa}` : ""}
+              </p>
+            </div>
+          ))}
+          {resume.courses.length ? (
+            <p className="text-xs text-slate-700">
+              <strong>Relevant Courses:</strong> {resume.courses.join(", ")}
+            </p>
+          ) : null}
+        </div>
+      ),
+    });
+  }
+
+  if (resume.skillGroups.length) {
+    sections.push({
+      key: "skills",
+      title: "Skills",
+      weight: 2 + resume.skillGroups.length,
+      content: (
+        <div className="space-y-1 text-xs">
+          {resume.skillGroups.map((group) => (
+            <p key={group.id}>
+              <strong>{group.name}:</strong> {group.skills.join(", ")}
+            </p>
+          ))}
+        </div>
+      ),
+    });
+  }
+
+  if (resume.projects.length) {
+    sections.push({
+      key: "projects",
+      title: "Projects",
+      weight: 3 + resume.projects.reduce((total, project) => total + 2 + project.bullets.length * 2, 0),
+      content: (
+        <div className="space-y-2">
+          {resume.projects.map((project) => (
+            <div key={project.id}>
+              <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
+                <strong className="inline-flex flex-wrap items-baseline gap-1">
+                  {project.name}
+                  {project.link ? (
+                    <a className="font-medium italic text-slate-500 underline" href={normalizeExternalUrl(project.link)} target="_blank" rel="noreferrer">
+                      {project.linkLabel || "Link"}
+                    </a>
+                  ) : null}
+                </strong>
+                <span className="text-[11px] text-slate-600">{project.techStack?.join(", ")}</span>
+              </div>
+              <PreviewBullets items={project.bullets} />
+            </div>
+          ))}
+        </div>
+      ),
+    });
+  }
+
+  if (resume.experience.length) {
+    sections.push({
+      key: "experience",
+      title: "Experience",
+      weight: 3 + resume.experience.reduce((total, item) => total + 2 + item.bullets.length * 2, 0),
+      content: (
+        <div className="space-y-2">
+          {resume.experience.map((item) => (
+            <div key={item.id}>
+              <div className="flex flex-wrap justify-between gap-2 text-xs">
+                <strong>{[item.role, item.company].filter(Boolean).join(", ")}</strong>
+                <span className="text-slate-600">
+                  {formatResumeDateRange(item.startDate, item.endDate)}
+                </span>
+              </div>
+              <PreviewBullets items={item.bullets} />
+            </div>
+          ))}
+        </div>
+      ),
+    });
+  }
+
+  resume.optionalSections.forEach((section) => {
+    sections.push({
+      key: section.id,
+      title: section.title,
+      weight: 3 + section.items.length * 2,
+      content: <PreviewBullets items={section.items} />,
+    });
+  });
+
+  return sections;
 }
 
 function PreviewSection({ title, children }: { title: string; children: React.ReactNode }) {

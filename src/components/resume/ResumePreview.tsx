@@ -15,7 +15,7 @@ const sectionLabels: Record<ResumeSectionId, string> = {
   skills: "Skills",
   projects: "Projects",
   experience: "Experience",
-  optional: "Additional",
+  optional: "Optional sections",
 };
 
 function SectionControls({
@@ -279,7 +279,9 @@ export function ResumePreview() {
                 onMove={moveSection}
                 onRemove={removeSection}
               />
-              <h2 className="resume-heading">{sectionLabels[sectionId]}</h2>
+              {sectionId === "optional" ? null : (
+                <h2 className="resume-heading">{sectionLabels[sectionId]}</h2>
+              )}
               <ResumeSection sectionId={sectionId} />
             </section>
           ))}
@@ -402,8 +404,8 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
   return (
     <div className="mt-2 space-y-3">
       {resume.optionalSections.map((section) => (
-        <div key={section.id}>
-          <h3 className="text-sm font-semibold text-slate-800">{section.title}</h3>
+        <div key={section.id} className="pt-1">
+          <h2 className="resume-heading">{section.title}</h2>
           <BulletList items={section.items} />
         </div>
       ))}

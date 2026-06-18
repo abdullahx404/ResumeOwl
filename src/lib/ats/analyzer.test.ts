@@ -113,7 +113,7 @@ describe("analyzeResumeLocally", () => {
 
   it("matches backend and GitHub formatting variants", () => {
     const result = analyzeResumeLocally({
-      resumeText: "Skills\nBackend development, Git/GitHub, Node.js",
+      resumeText: "Skills\nBackend, Git/GitHub, Node.js",
       jobDescription: "Need back-end development, git & github, and Node.js.",
     });
 
@@ -124,5 +124,16 @@ describe("analyzeResumeLocally", () => {
         { keyword: "Node.js", present: true },
       ]),
     );
+    expect(result.missingKeywords).not.toContain("Backend Development");
+  });
+
+  it("shows missing required skills in the missing keyword list", () => {
+    const result = analyzeResumeLocally({
+      resumeText: "Skills\nReact, Node.js",
+      jobDescription: "Need React and Node.js.",
+      requiredSkills: ["React", "Express.js", "Angular"],
+    });
+
+    expect(result.missingKeywords).toEqual(expect.arrayContaining(["Express.js", "Angular"]));
   });
 });

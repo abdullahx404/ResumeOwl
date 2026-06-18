@@ -44,4 +44,17 @@ describe("createLatexStyleSource", () => {
     expect(source).toContain("\\href{https://www.resume.owl}{GitHub}");
     expect(source).toContain("\\textbf{1000+ users}");
   });
+
+  it("keeps relevant courses when no education entry is filled", () => {
+    const source = createLatexStyleSource({
+      ...sampleResume,
+      education: [],
+      courses: ["Algorithms"],
+      sectionOrder: ["education"],
+    });
+
+    expect(source).toContain("\\section*{Education}");
+    expect(source).toContain("Relevant Courses");
+    expect(source).toContain("Algorithms");
+  });
 });

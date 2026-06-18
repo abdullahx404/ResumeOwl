@@ -40,7 +40,7 @@ function sectionTitle(sectionId: ResumeSectionId) {
     skills: "Skills",
     projects: "Projects",
     experience: "Experience",
-    optional: "Additional",
+    optional: "Optional Sections",
   };
 
   return titles[sectionId];
@@ -82,7 +82,7 @@ export function buildDocxDocument(resume: ResumeDocument): Document {
   }
 
   for (const sectionId of resume.sectionOrder) {
-    if (sectionId === "education" && resume.education.length) {
+    if (sectionId === "education" && (resume.education.length || resume.courses.length)) {
       children.push(heading(sectionTitle(sectionId)));
       for (const item of resume.education) {
         children.push(

@@ -56,7 +56,7 @@ export function createLatexStyleSource(resume: ResumeDocument): string {
   }
 
   for (const sectionId of resume.sectionOrder) {
-    if (sectionId === "education" && resume.education.length) {
+    if (sectionId === "education" && (resume.education.length || resume.courses.length)) {
       lines.push("\\section*{Education}");
       for (const education of resume.education) {
         lines.push(
