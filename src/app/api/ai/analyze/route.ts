@@ -9,7 +9,9 @@ import {
 } from "@/lib/validation/analyzer";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 10;
+
+const aiAnalyzeTimeoutMs = 8000;
 
 export async function POST(request: Request) {
   let payload: unknown;
@@ -38,14 +40,15 @@ export async function POST(request: Request) {
         configured: false,
         error: "AI feedback is not configured yet. Local analysis is still available.",
       },
-      { status: 503 },
     );
   }
 
   try {
     const localAnalysis = analyzeResumeLocally(parsed.data);
     const prompt = buildAnalyzePrompt(parsed.data, localAnalysis);
-    const rawFeedback = await generateAiText(prompt);
+    const rawFeedback = await generateAiText(prompt, {
+      timeoutMs: aiAnalyzeTimeoutMs,
+    });
     const json = extractJsonObject(rawFeedback);
     const feedback = aiAnalyzerFeedbackSchema.parse(json);
 
@@ -59,7 +62,6 @@ export async function POST(request: Request) {
         configured: true,
         error: "AI feedback could not be generated safely. Local analysis is still available.",
       },
-      { status: 502 },
     );
   }
 }

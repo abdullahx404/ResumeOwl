@@ -270,6 +270,15 @@ function AnalysisResults({
   aiFeedback: AiAnalyzerFeedback | null;
   aiStatus: "idle" | "loading" | "ready" | "unavailable" | "error";
 }) {
+  const requiredSkillMatchedCount = result.requiredSkillMatches.filter((skill) => skill.present).length;
+  const requiredSkillMissingCount = result.requiredSkillMatches.filter((skill) => !skill.present).length;
+  const matchedCount = result.requiredSkillMatches.length
+    ? requiredSkillMatchedCount
+    : result.matchedKeywords.length;
+  const missingCount = result.requiredSkillMatches.length
+    ? requiredSkillMissingCount
+    : result.missingKeywords.length;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -280,8 +289,8 @@ function AnalysisResults({
           <h2 className="mt-1 text-4xl font-semibold text-ink">{result.score}%</h2>
         </div>
         <div className="grid grid-cols-3 gap-2 text-center text-sm">
-          <Metric label="Matched" value={result.matchedKeywords.length} />
-          <Metric label="Missing" value={result.missingKeywords.length} />
+          <Metric label="Matched" value={matchedCount} />
+          <Metric label="Missing" value={missingCount} />
           <Metric label="Weak bullets" value={result.weakBullets.length} />
         </div>
       </div>

@@ -30,8 +30,8 @@ describe("analyzeResumeLocally", () => {
     });
 
     expect(result.score).toBeGreaterThan(0);
-    expect(result.matchedKeywords).toEqual(expect.arrayContaining(["react", "typescript", "sql"]));
-    expect(result.missingKeywords).toEqual(expect.arrayContaining(["rest api", "testing"]));
+    expect(result.matchedKeywords).toEqual(expect.arrayContaining(["React", "TypeScript", "SQL"]));
+    expect(result.missingKeywords).toEqual(expect.arrayContaining(["REST APIs", "testing"]));
   });
 
   it("detects required skill matches", () => {
@@ -88,9 +88,26 @@ describe("analyzeResumeLocally", () => {
         "Ideal candidate should build clean digital applications and solve user-friendly problems with React and PostgreSQL.",
     });
 
-    expect(result.missingKeywords).toContain("postgresql");
+    expect(result.missingKeywords).toContain("PostgreSQL");
     expect(result.missingKeywords).not.toEqual(
       expect.arrayContaining(["ideal", "candidate", "build", "applications", "clean", "solve"]),
     );
+  });
+
+  it("canonicalizes equivalent skill names for cleaner counts", () => {
+    const result = analyzeResumeLocally({
+      resumeText: "Skills\nHTML, CSS, REST APIs",
+      jobDescription: "Need HTML5, CSS3, REST API, and React.",
+    });
+
+    expect(result.requiredSkillMatches).toEqual(
+      expect.arrayContaining([
+        { keyword: "HTML", present: true },
+        { keyword: "CSS", present: true },
+        { keyword: "REST APIs", present: true },
+        { keyword: "React", present: false },
+      ]),
+    );
+    expect(result.requiredSkillMatches.filter((skill) => skill.keyword === "REST APIs")).toHaveLength(1);
   });
 });

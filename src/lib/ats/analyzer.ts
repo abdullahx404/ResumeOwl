@@ -29,7 +29,6 @@ const actionVerbs = [
 ];
 
 const extraSkillTerms = [
-  "api",
   "rest api",
   "rest apis",
   "websocket",
@@ -63,6 +62,19 @@ const ignoredRequiredSkillFragments = new Set([
 const skillVocabulary = [...new Set([...commonSkills, ...commonCourses, ...extraSkillTerms])].sort(
   (a, b) => b.length - a.length,
 );
+
+const canonicalSkillLabels = new Map<string, string>([
+  ["css3", "CSS"],
+  ["html5", "HTML"],
+  ["rest api", "REST APIs"],
+  ["rest apis", "REST APIs"],
+  ["ui/ux principles", "UI/UX"],
+]);
+
+function canonicalSkillLabel(term: string): string {
+  const normalized = normalizeText(term);
+  return canonicalSkillLabels.get(normalized) ?? term;
+}
 
 function detectSections(resumeText: string): string[] {
   return Object.entries(sectionPatterns)
@@ -120,14 +132,15 @@ function uniqueTerms(terms: string[]): string[] {
   const result: string[] = [];
 
   for (const term of terms) {
-    const normalized = normalizeText(term);
+    const label = canonicalSkillLabel(term);
+    const normalized = normalizeText(label);
 
     if (!normalized || seen.has(normalized)) {
       continue;
     }
 
     seen.add(normalized);
-    result.push(term);
+    result.push(label);
   }
 
   return result;
@@ -139,7 +152,7 @@ function extractSkillKeywords(text: string): string[] {
       const normalized = normalizeText(term);
       return normalized.length > 2 && hasTerm(text, normalized);
     }),
-  ).map((term) => normalizeText(term));
+  );
 }
 
 function normalizeRequiredSkills(requiredSkills: string[], jobDescription: string): string[] {
@@ -147,7 +160,10 @@ function normalizeRequiredSkills(requiredSkills: string[], jobDescription: strin
     .flatMap((skill) => skill.split(/[,;\n]/))
     .map((skill) => skill.trim())
     .filter(Boolean)
-    .filter((skill) => !ignoredRequiredSkillFragments.has(normalizeText(skill)))
+    .filter((skill) => {
+      const normalized = normalizeText(skill);
+      return normalized.length > 2 && !ignoredRequiredSkillFragments.has(normalized);
+    })
     .flatMap((skill) => {
       const matchedKnownTerms = skillVocabulary.filter(
         (term) => normalizeText(term).length > 2 && hasTerm(skill, term),

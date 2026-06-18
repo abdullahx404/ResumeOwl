@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { POST } from "./route";
 
 describe("POST /api/ai/analyze", () => {
-  it("returns unavailable when no AI provider is configured", async () => {
+  it("returns a non-failing optional AI status when no provider is configured", async () => {
     const response = await POST(
       new Request("http://localhost/api/ai/analyze", {
         method: "POST",
@@ -15,7 +15,7 @@ describe("POST /api/ai/analyze", () => {
     );
     const data = (await response.json()) as { configured?: boolean };
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(200);
     expect(data.configured).toBe(false);
   });
 
