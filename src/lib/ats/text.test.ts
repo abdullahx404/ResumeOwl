@@ -29,4 +29,10 @@ describe("ATS text helpers", () => {
   it("matches normalized terms", () => {
     expect(hasTerm("Built dashboards with Next.js", "next.js")).toBe(true);
   });
+
+  it("matches hyphenated, spaced, and slashed skill variants", () => {
+    expect(hasTerm("Back-end development with Node.js", "backend development")).toBe(true);
+    expect(hasTerm("Version control using Git/GitHub", "git and github")).toBe(true);
+    expect(hasTerm("Git & GitHub workflows", "git/github")).toBe(true);
+  });
 });

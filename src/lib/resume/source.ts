@@ -13,6 +13,10 @@ function escapeLatex(value: string): string {
     .replaceAll("}", "\\}");
 }
 
+function escapeLatexUrl(value: string): string {
+  return value.replaceAll("\\", "%5C").replaceAll("{", "%7B").replaceAll("}", "%7D");
+}
+
 function bullets(items: string[]): string {
   return items.map((item) => `  \\item ${escapeLatex(item)}`).join("\n");
 }
@@ -70,7 +74,10 @@ export function createLatexStyleSource(resume: ResumeDocument): string {
     if (sectionId === "projects" && resume.projects.length) {
       lines.push("\\section*{Projects}");
       for (const project of resume.projects) {
-        lines.push(`\\textbf{${escapeLatex(project.name)}}`);
+        const projectTitle = project.link
+          ? `\\textbf{${escapeLatex(project.name)}} \\hfill \\href{${escapeLatexUrl(project.link)}}{${escapeLatex(project.linkLabel || "Link")}}`
+          : `\\textbf{${escapeLatex(project.name)}}`;
+        lines.push(projectTitle);
         if (project.techStack?.length) {
           lines.push(`\\emph{${escapeLatex(project.techStack.join(", "))}}`);
         }

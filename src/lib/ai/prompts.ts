@@ -48,10 +48,10 @@ Required skills:
 ${request.requiredSkills.join(", ") || "None provided"}
 
 Resume:
-${truncate(request.resumeText, 25_000)}
+${truncate(request.resumeText, 12_000)}
 
 Job description:
-${truncate(request.jobDescription, 20_000)}
+${truncate(request.jobDescription, 8_000)}
 `.trim();
 }
 

@@ -33,6 +33,7 @@ export const projectEntrySchema = z.object({
   id: idSchema,
   name: z.string().trim().min(1, "Project name is required"),
   link: z.string().trim().url("Enter a valid URL").optional().or(z.literal("")),
+  linkLabel: z.string().trim().optional(),
   techStack: z.array(z.string().trim().min(1)).default([]),
   bullets: z.array(z.string().trim().min(1)).min(1, "Add at least one bullet"),
 });

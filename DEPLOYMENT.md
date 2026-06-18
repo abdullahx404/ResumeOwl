@@ -1,6 +1,6 @@
 # ResumeOwl Deployment Guide
 
-ResumeOwl is built for Vercel with no database and no login system. AI features are optional, but production AI requires server-side environment variables.
+ResumeOwl is built for Vercel as a browser-based resume builder and analyzer. AI features are optional, but production AI requires server-side environment variables.
 
 ## 1. Local Verification
 
@@ -108,12 +108,12 @@ After deployment, test:
 - Preview opens.
 - PDF print opens browser print dialog.
 - DOCX download creates a `.docx`.
-- TEX download creates a `.tex`.
+- LaTeX Code download creates a `.tex`.
 - Security headers are present.
 
 ## 6. Privacy Notes
 
-ResumeOwl itself does not use login or database storage. User profile and latest resume drafts can be saved in the user's own browser storage until they clear browser history or site data.
+ResumeOwl stores user profile and latest resume drafts in the user's own browser storage until they clear browser history or site data.
 
 Gemini free-tier API usage is different: Google states unpaid Gemini API quota may be used to improve Google products, and human reviewers may process API input/output. For production with real resume data, the more privacy-aligned choice is a paid Gemini API project with billing enabled.
 

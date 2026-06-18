@@ -35,6 +35,7 @@ export type ProjectEntry = {
   id: string;
   name: string;
   link?: string;
+  linkLabel?: string;
   techStack?: string[];
   bullets: string[];
 };

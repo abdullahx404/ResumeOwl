@@ -110,4 +110,19 @@ describe("analyzeResumeLocally", () => {
     );
     expect(result.requiredSkillMatches.filter((skill) => skill.keyword === "REST APIs")).toHaveLength(1);
   });
+
+  it("matches backend and GitHub formatting variants", () => {
+    const result = analyzeResumeLocally({
+      resumeText: "Skills\nBackend development, Git/GitHub, Node.js",
+      jobDescription: "Need back-end development, git & github, and Node.js.",
+    });
+
+    expect(result.requiredSkillMatches).toEqual(
+      expect.arrayContaining([
+        { keyword: "Backend Development", present: true },
+        { keyword: "Git and GitHub", present: true },
+        { keyword: "Node.js", present: true },
+      ]),
+    );
+  });
 });

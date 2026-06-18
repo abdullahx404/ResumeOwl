@@ -96,7 +96,12 @@ export function ResumePreview() {
   }
 
   function printResume() {
+    const previousTitle = document.title;
+    document.title = safeFileName(resume.personal.fullName);
     window.print();
+    window.setTimeout(() => {
+      document.title = previousTitle;
+    }, 500);
   }
 
   function sourceFileName(extension: "tex" | "docx") {
@@ -129,8 +134,7 @@ export function ResumePreview() {
               Resume editor
             </h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Edit your browser-local resume, reorder sections, copy LaTeX-style source,
-              or print to PDF.
+              Edit your resume, reorder sections, copy LaTeX-style source, or print to PDF.
             </p>
           </div>
 
@@ -195,7 +199,7 @@ export function ResumePreview() {
               onClick={downloadSource}
             >
               <Download className="h-4 w-4" />
-              TEX
+              LaTeX Code
             </button>
           </div>
 
@@ -334,7 +338,19 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
         {resume.projects.map((project) => (
           <div key={project.id}>
             <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-              <strong>{project.name}</strong>
+              <strong className="inline-flex flex-wrap items-baseline gap-1">
+                {project.name}
+                {project.link ? (
+                  <a
+                    className="text-xs font-semibold text-owl-700 underline"
+                    href={project.link}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {project.linkLabel || "Link"}
+                  </a>
+                ) : null}
+              </strong>
               <span className="text-xs text-slate-600">{project.techStack?.join(", ")}</span>
             </div>
             <BulletList items={project.bullets} />

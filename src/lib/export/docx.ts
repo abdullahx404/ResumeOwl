@@ -1,5 +1,6 @@
 import {
   Document,
+  ExternalHyperlink,
   HeadingLevel,
   Packer,
   Paragraph,
@@ -103,7 +104,25 @@ export function buildDocxDocument(resume: ResumeDocument): Document {
     if (sectionId === "projects" && resume.projects.length) {
       children.push(heading(sectionTitle(sectionId)));
       resume.projects.forEach((project) => {
-        children.push(new Paragraph({ children: [new TextRun({ text: project.name, bold: true })] }));
+        children.push(new Paragraph({
+          children: [
+            new TextRun({ text: project.name, bold: true }),
+            ...(project.link
+              ? [
+                  new TextRun({ text: " " }),
+                  new ExternalHyperlink({
+                    link: project.link,
+                    children: [
+                      new TextRun({
+                        text: project.linkLabel || "Link",
+                        style: "Hyperlink",
+                      }),
+                    ],
+                  }),
+                ]
+              : []),
+          ],
+        }));
         if (project.techStack?.length) {
           children.push(new Paragraph(project.techStack.join(", ")));
         }

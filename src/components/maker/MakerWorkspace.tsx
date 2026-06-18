@@ -24,6 +24,7 @@ type ProjectDraft = {
   id: string;
   name: string;
   link: string;
+  linkLabel: string;
   notes: string;
   techStack: string;
   bulletCount: number;
@@ -93,6 +94,7 @@ function emptyProject(): ProjectDraft {
     id: createId("project"),
     name: "",
     link: "",
+    linkLabel: "",
     notes: "",
     techStack: "",
     bulletCount: 3,
@@ -382,6 +384,7 @@ export function MakerWorkspace() {
           id: project.id,
           name: project.name || inferProjectName(project.notes),
           link: project.link,
+          linkLabel: project.linkLabel || project.name || "Project",
           techStack: parseCommaList(project.techStack).length
             ? parseCommaList(project.techStack)
             : inferTechStack(project.notes),
@@ -568,23 +571,23 @@ export function MakerWorkspace() {
 
         <aside className="space-y-4 xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto">
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
-          <h2 className="text-lg font-semibold text-ink">Live Preview</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Updates automatically as you type. Open the full preview when you are ready to export.
-          </p>
-          <div className="mt-4 space-y-2">
-            <button type="button" className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-owl-700 px-4 py-2 text-sm font-semibold text-white hover:bg-owl-900" onClick={applyToPreview}>
-              <Eye className="h-4 w-4" />
-              Update Preview
-            </button>
-            <Link href="/preview" className="inline-flex w-full items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setResume(liveResume)}>
-              Open Preview
-            </Link>
-            <button type="button" className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={resetMaker}>
-              <RotateCcw className="h-4 w-4" />
-              Reset Maker
-            </button>
-          </div>
+            <h2 className="text-lg font-semibold text-ink">Resume Overview</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Updates automatically as you type. Open the full preview when you are ready to export.
+            </p>
+            <div className="mt-4 space-y-2">
+              <button type="button" className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-owl-700 px-4 py-2 text-sm font-semibold text-white hover:bg-owl-900" onClick={applyToPreview}>
+                <Eye className="h-4 w-4" />
+                Update Preview
+              </button>
+              <Link href="/preview" className="inline-flex w-full items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setResume(liveResume)}>
+                Open Preview
+              </Link>
+              <button type="button" className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={resetMaker}>
+                <RotateCcw className="h-4 w-4" />
+                Reset Maker
+              </button>
+            </div>
           </div>
           <LiveResumePreview resume={liveResume} />
         </aside>
@@ -745,7 +748,8 @@ function ProjectEditor({ project, setProjects, isGenerating, onGenerate }: { pro
     <div className="rounded-md border border-slate-200 p-3">
       <div className="grid gap-3 md:grid-cols-2">
         <TextField label="Project Name" value={project.name} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, name: value } : item))} />
-        <TextField label={<TitleWithHint title="Link" hint="optional" />} value={project.link} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, link: value } : item))} />
+        <TextField label={<TitleWithHint title="Link Name" hint="optional" />} value={project.linkLabel} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, linkLabel: value } : item))} />
+        <TextField label={<TitleWithHint title="Link Address" hint="optional" />} value={project.link} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, link: value } : item))} />
         <TextField label={<TitleWithHint title="Add Tech Stack" hint="optional" />} value={project.techStack} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, techStack: value } : item))} />
         <label className="block text-sm font-medium text-slate-700">Bullet Count<select className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" value={project.bulletCount} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, bulletCount: Number(event.target.value) } : item))}>{[2, 3, 4, 5, 6].map((count) => <option key={count}>{count}</option>)}</select></label>
       </div>
@@ -878,7 +882,14 @@ function LiveResumePreview({ resume }: { resume: ResumeDocument }) {
             {resume.projects.map((project) => (
               <div key={project.id}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
-                  <strong>{project.name}</strong>
+                  <strong className="inline-flex flex-wrap items-baseline gap-1">
+                    {project.name}
+                    {project.link ? (
+                      <a className="text-owl-700 underline" href={project.link} target="_blank" rel="noreferrer">
+                        {project.linkLabel || "Link"}
+                      </a>
+                    ) : null}
+                  </strong>
                   <span className="text-[11px] text-slate-600">{project.techStack?.join(", ")}</span>
                 </div>
                 <PreviewBullets items={project.bullets} />

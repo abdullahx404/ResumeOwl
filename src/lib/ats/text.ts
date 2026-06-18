@@ -77,7 +77,17 @@ export function extractKeywords(text: string, limit = 25): string[] {
 }
 
 export function hasTerm(text: string, term: string): boolean {
-  return normalizeText(text).includes(normalizeText(term));
+  const normalizedText = normalizeText(text);
+  const normalizedTerm = normalizeText(term);
+
+  if (normalizedText.includes(normalizedTerm)) {
+    return true;
+  }
+
+  const compactText = normalizedText.replace(/\band\b/g, "").replace(/[\s/-]+/g, "");
+  const compactTerm = normalizedTerm.replace(/\band\b/g, "").replace(/[\s/-]+/g, "");
+
+  return compactTerm.length > 2 && compactText.includes(compactTerm);
 }
 
 export function splitLines(text: string): string[] {

@@ -66,7 +66,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   Welcome To ResumeOwl
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-slate-600">
-                  Build, analyze, and export your resume without an account. Your profile and resume stay saved in this browser unless browser history or site data is cleared.
+                  Build, analyze, and export your resume from one focused workspace.
                 </p>
                 <button
                   type="button"

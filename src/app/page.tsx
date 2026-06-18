@@ -5,19 +5,19 @@ const tools = [
   {
     href: "/preview",
     title: "Resume Preview",
-    description: "Edit a LaTeX-style resume, reorder sections, copy source, and print to PDF.",
+    description: "Edit a clean resume preview, reorder sections, copy source, and export.",
     icon: FileText,
   },
   {
     href: "/analyzer",
     title: "Resume Analyzer",
-    description: "Coming next: match score, missing skills, ATS issues, and recruiter feedback.",
+    description: "Check skill coverage, ATS issues, weak bullets, and fit for a target role.",
     icon: SearchCheck,
   },
   {
     href: "/maker",
     title: "Resume Maker",
-    description: "Coming soon: guided resume creation with editable generated bullets.",
+    description: "Build a resume from structured inputs with editable bullets and live preview.",
     icon: PencilLine,
   },
 ];
@@ -32,11 +32,11 @@ export default function HomePage() {
               ResumeOwl
             </p>
             <h1 className="mt-2 max-w-3xl text-4xl font-semibold tracking-normal text-ink">
-              Private resume tooling without accounts or database storage.
+              Build, review, and export a focused resume in your browser.
             </h1>
           </div>
           <p className="max-w-sm rounded-full border border-owl-100 bg-owl-50 px-4 py-2 text-sm font-medium text-owl-900">
-            Data stays saved only in this browser unless you clear site data.
+            No account required. Start from the tool you need.
           </p>
         </header>
 

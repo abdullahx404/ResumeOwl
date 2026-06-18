@@ -42,6 +42,7 @@ export const sampleResume: ResumeDocument = {
       id: "project-1",
       name: "ResumeOwl Prototype",
       link: "https://github.com/example/resumeowl",
+      linkLabel: "GitHub",
       techStack: ["Next.js", "TypeScript", "Tailwind CSS"],
       bullets: [
         "Built a resume preview workflow with editable sections and print-focused styling.",

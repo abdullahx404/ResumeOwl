@@ -22,4 +22,10 @@ describe("createLatexStyleSource", () => {
 
     expect(source).toContain("A\\&B\\_User");
   });
+
+  it("includes project link labels as LaTeX links", () => {
+    const source = createLatexStyleSource(sampleResume);
+
+    expect(source).toContain("\\href{https://github.com/example/resumeowl}{GitHub}");
+  });
 });
