@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Eye, Loader2, Plus, RotateCcw, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NotificationPill } from "@/components/ui/NotificationPill";
-import { extractPlainSummary, generateLocalBullets, inferTechStack, normalizeExternalUrl, notesToBullets, parseCommaList, polishSummaryLocally, textToBullets } from "@/lib/maker/bullets";
+import { extractPlainSummary, inferTechStack, normalizeExternalUrl, notesToBullets, parseCommaList, polishSummaryLocally, textToBullets } from "@/lib/maker/bullets";
 import { addUniqueValue, autoGroupSkills, commonCourses, commonSkills, filterOptions } from "@/lib/maker/options";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import { getStoredProfile } from "@/lib/resume/persistence";
@@ -244,8 +244,6 @@ export function MakerWorkspace() {
       techStack: parseCommaList(project.techStack),
       count: Math.max(4, Math.min(5, project.bulletCount)),
       sectionType: "project" as const,
-      generationFocus:
-        "Rewrite the given project description into a resume-style project entry. Output exactly 1 project title line and 4-5 bullet points. Keep the format professional, concise, and skill-focused. Start with a strong impact bullet including a bold numeric metric, such as **1000+ users**, **80% faster**, or **50% reduced cost**. If no metric is provided, create a realistic placeholder like **[X]+ users** or **[Y]% improvement**. Avoid repeating the same skills or technologies in multiple bullet points. Mention each major technology only once. Focus on architecture, implementation, reliability, performance, privacy, scalability, and user impact. Use strong action verbs like Developed, Architected, Implemented, Built, Designed, Optimized. Do not add fake features. Do not use buzzwords, fluff, or long sentences. Keep each bullet under 2 lines. Bold all numbers, percentages, and measurable impact. Return only the final formatted resume entry.",
     };
 
     setProjectGeneratingIds((current) => addUniqueValue(current, project.id));
@@ -259,37 +257,30 @@ export function MakerWorkspace() {
       const data = (await response.json()) as {
         bullets?: string[];
         configured?: boolean;
+        error?: string;
         suggestedName?: string;
         techStack?: string[];
       };
-      const bullets = data.bullets?.length ? data.bullets : generateLocalBullets(payload);
+      if (!response.ok || !data.bullets?.length) {
+        flash(data.error || "AI generation failed or provider limit reached.");
+        return;
+      }
+
+      const bullets = data.bullets;
       setProjects((current) =>
         current.map((item) =>
           item.id === project.id
             ? {
                 ...item,
-                techStack: data.techStack?.length
-                  ? data.techStack.join(", ")
-                  : item.techStack || inferTechStack(item.notes).join(", "),
+                techStack: data.techStack?.length ? data.techStack.join(", ") : item.techStack,
                 bullets,
               }
             : item,
         ),
       );
-      flash(data.configured === false ? "Local bullets generated." : "Bullets generated.");
+      flash(data.configured === false ? "AI generation unavailable." : "Bullets generated.");
     } catch {
-      setProjects((current) =>
-        current.map((item) =>
-          item.id === project.id
-            ? {
-                ...item,
-                techStack: item.techStack || inferTechStack(item.notes).join(", "),
-                bullets: generateLocalBullets(payload),
-              }
-            : item,
-        ),
-      );
-      flash("Local bullets generated.");
+      flash("AI generation failed or provider limit reached.");
     } finally {
       setProjectGeneratingIds((current) => current.filter((id) => id !== project.id));
     }
@@ -353,8 +344,6 @@ export function MakerWorkspace() {
       techStack: [],
       count: item.bulletCount,
       sectionType: "experience" as const,
-      generationFocus:
-        "Make bullets strongly role-impact-oriented and number-oriented. Use percentages, counts, user numbers, or scale only when they are explicitly present in the experience details; never invent metrics.",
     };
 
     setExperienceGeneratingIds((current) => addUniqueValue(current, item.id));
@@ -365,19 +354,19 @@ export function MakerWorkspace() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await response.json()) as { bullets?: string[]; configured?: boolean };
-      const bullets = data.bullets?.length ? data.bullets : generateLocalBullets(payload);
+      const data = (await response.json()) as { bullets?: string[]; configured?: boolean; error?: string };
+      if (!response.ok || !data.bullets?.length) {
+        flash(data.error || "AI generation failed or provider limit reached.");
+        return;
+      }
+
+      const bullets = data.bullets;
       setExperience((current) =>
         current.map((entry) => (entry.id === item.id ? { ...entry, bullets } : entry)),
       );
-      flash(data.configured === false ? "Local bullets generated." : "Bullets generated.");
+      flash(data.configured === false ? "AI generation unavailable." : "Bullets generated.");
     } catch {
-      setExperience((current) =>
-        current.map((entry) =>
-          entry.id === item.id ? { ...entry, bullets: generateLocalBullets(payload) } : entry,
-        ),
-      );
-      flash("Local bullets generated.");
+      flash("AI generation failed or provider limit reached.");
     } finally {
       setExperienceGeneratingIds((current) => current.filter((id) => id !== item.id));
     }
@@ -619,7 +608,7 @@ export function MakerWorkspace() {
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
-              <LiveResumePreview resume={liveResume} />
+          <LiveResumePreview resume={liveResume} />
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
             <h2 className="text-lg font-semibold text-ink">Resume Overview</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -924,7 +913,7 @@ function TitleWithHint({ title, hint }: { title: string; hint: string }) {
 
 function LiveResumePreview({ resume }: { resume: ResumeDocument }) {
   return (
-    <article className="max-h-[calc(100vh-3rem)] min-h-[760px] overflow-y-auto rounded-lg border border-slate-200 bg-white px-5 py-6 shadow-soft sm:px-7">
+    <article className="min-h-[760px] rounded-lg border border-slate-200 bg-white px-5 py-6 shadow-soft sm:px-7 xl:h-[calc(100vh-3rem)] xl:min-h-0 xl:overflow-y-auto">
       <header className="pb-3 text-center">
         <h2 className="text-xl font-bold uppercase tracking-normal text-ink">
           {resume.personal.fullName || "Your Name"}

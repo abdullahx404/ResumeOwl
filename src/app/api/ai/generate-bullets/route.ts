@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { generateAiText, hasAiProvider } from "@/lib/ai/provider";
-import { extractJsonObject } from "@/lib/ai/json";
-import { generateLocalBullets, inferTechStack } from "@/lib/maker/bullets";
 import {
   bulletGenerationRequestSchema,
   bulletGenerationResponseSchema,
@@ -13,15 +11,11 @@ export const maxDuration = 10;
 const bulletGenerationTimeoutMs = 7000;
 
 function buildPrompt(input: ReturnType<typeof bulletGenerationRequestSchema.parse>) {
-  if (input.sectionType === "project" || input.sectionType === "experience") {
-    const entryType = input.sectionType === "project" ? "project" : "experience";
-    const titleLine = input.name || (input.sectionType === "project" ? "Project" : "Experience");
-
-    return `
-Rewrite the given ${entryType} description into a resume-style ${entryType} entry.
+  return `
+Rewrite the given project description into a resume-style project entry.
 
 Requirements:
-* Output exactly 1 ${entryType} title line and ${input.count} bullet points.
+* Output exactly 1 project title line and ${input.count} bullet points, as defined in the bullet box.
 * Keep the format professional, concise, and skill-focused.
 * Start with a strong impact bullet including a bold numeric metric, such as **1000+ users**, **80% faster**, or **50% reduced cost**. If no metric is provided, create a realistic placeholder like **[X]+ users** or **[Y]% improvement**.
 * Avoid repeating the same skills or technologies in multiple bullet points.
@@ -32,18 +26,40 @@ Requirements:
 * Do not use buzzwords, fluff, or long sentences.
 * Keep each bullet under 2 lines.
 * Bold all numbers, percentages, and measurable impact.
-* Use this exact title line and do not rename it: ${titleLine}.
-* Return only valid JSON in this shape: {"suggestedName":"${titleLine}","techStack":["..."],"bullets":["..."]}.
+* Return only the final formatted resume entry.
 
 Input description:
 ${input.notes}
-
-Explicit tech stack, if provided:
-${input.techStack.join(", ") || "None provided"}
 `.trim();
-  }
+}
 
-  return "";
+function cleanupLine(line: string) {
+  return line
+    .replace(/^```[\w-]*\s*/g, "")
+    .replace(/```$/g, "")
+    .replace(/^#{1,6}\s+/g, "")
+    .replace(/^\*\*(.+)\*\*$/g, "$1")
+    .trim();
+}
+
+function parseResumeEntry(raw: string, count: number) {
+  const lines = raw
+    .replace(/\r/g, "")
+    .split("\n")
+    .map(cleanupLine)
+    .filter(Boolean);
+  const title = lines.find((line) => !/^([-*•]|\d+[.)])\s+/.test(line));
+  const bulletLines = lines
+    .filter((line) => /^([-*•]|\d+[.)])\s+/.test(line))
+    .map((line) => line.replace(/^([-*•]|\d+[.)])\s+/, "").trim())
+    .filter(Boolean);
+  const fallbackBullets = lines.slice(title ? lines.indexOf(title) + 1 : 1).filter((line) => line !== title);
+  const bullets = (bulletLines.length ? bulletLines : fallbackBullets).slice(0, count);
+
+  return bulletGenerationResponseSchema.parse({
+    suggestedName: title,
+    bullets,
+  });
 }
 
 export async function POST(request: Request) {
@@ -62,34 +78,34 @@ export async function POST(request: Request) {
   }
 
   if (!hasAiProvider()) {
-    return NextResponse.json({
-      configured: false,
-      suggestedName: parsed.data.name,
-      techStack: parsed.data.sectionType === "project" ? inferTechStack(parsed.data.notes) : parsed.data.techStack,
-      bullets: generateLocalBullets(parsed.data),
-    });
+    return NextResponse.json(
+      {
+        configured: false,
+        error: "AI generation is unavailable. Check the API key, quota, or provider limit.",
+      },
+      { status: 503 },
+    );
   }
 
   try {
     const raw = await generateAiText(buildPrompt(parsed.data), {
       timeoutMs: bulletGenerationTimeoutMs,
+      jsonMode: false,
     });
-    const json = extractJsonObject(raw);
-    const result = bulletGenerationResponseSchema.parse(json);
+    const result = parseResumeEntry(raw, parsed.data.count);
 
     return NextResponse.json({
       configured: true,
       bullets: result.bullets,
       suggestedName: parsed.data.name || result.suggestedName,
-      techStack: result.techStack,
     });
   } catch {
-    return NextResponse.json({
-      configured: true,
-      suggestedName: parsed.data.name,
-      techStack: parsed.data.sectionType === "project" ? inferTechStack(parsed.data.notes) : parsed.data.techStack,
-      bullets: generateLocalBullets(parsed.data),
-      error: "AI bullets could not be generated safely, so local bullets were used.",
-    });
+    return NextResponse.json(
+      {
+        configured: true,
+        error: "AI generation failed or provider limit reached. Try again later.",
+      },
+      { status: 503 },
+    );
   }
 }

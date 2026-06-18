@@ -74,6 +74,7 @@ async function callGemini(
   prompt: string,
   signal?: AbortSignal,
   preferFastModel = false,
+  jsonMode = true,
 ): Promise<string> {
   const models = preferFastModel
     ? [...new Set(["gemini-2.5-flash-lite", "gemini-2.5-flash", config.model])]
@@ -82,7 +83,7 @@ async function callGemini(
 
   for (const model of models) {
     try {
-      return await callGeminiModel({ ...config, model }, prompt, signal);
+      return await callGeminiModel({ ...config, model }, prompt, signal, jsonMode);
     } catch (error) {
       if (error instanceof AiProviderError && error.code === "timeout") {
         throw error;
@@ -95,7 +96,12 @@ async function callGemini(
   throw lastError ?? new Error("AI provider request failed.");
 }
 
-async function callGeminiModel(config: AiProviderConfig, prompt: string, signal?: AbortSignal): Promise<string> {
+async function callGeminiModel(
+  config: AiProviderConfig,
+  prompt: string,
+  signal?: AbortSignal,
+  jsonMode = true,
+): Promise<string> {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${config.apiKey}`,
     {
@@ -112,7 +118,7 @@ async function callGeminiModel(config: AiProviderConfig, prompt: string, signal?
           },
         ],
         generationConfig: {
-          responseMimeType: "application/json",
+          ...(jsonMode ? { responseMimeType: "application/json" } : {}),
           temperature: 0.2,
         },
       }),
@@ -133,7 +139,12 @@ async function callGeminiModel(config: AiProviderConfig, prompt: string, signal?
   return text;
 }
 
-async function callChatProvider(config: AiProviderConfig, prompt: string, signal?: AbortSignal): Promise<string> {
+async function callChatProvider(
+  config: AiProviderConfig,
+  prompt: string,
+  signal?: AbortSignal,
+  jsonMode = true,
+): Promise<string> {
   const endpoint =
     config.provider === "groq"
       ? "https://api.groq.com/openai/v1/chat/completions"
@@ -157,8 +168,9 @@ async function callChatProvider(config: AiProviderConfig, prompt: string, signal
       messages: [
         {
           role: "system",
-          content:
-            "You are ResumeOwl. Return valid JSON only and never fabricate resume facts.",
+          content: jsonMode
+            ? "You are ResumeOwl. Return valid JSON only and never fabricate resume facts."
+            : "You are ResumeOwl. Follow the user's requested output format exactly and never fabricate resume facts.",
         },
         {
           role: "user",
@@ -166,7 +178,7 @@ async function callChatProvider(config: AiProviderConfig, prompt: string, signal
         },
       ],
       temperature: 0.2,
-      response_format: { type: "json_object" },
+      ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
     }),
   });
 
@@ -188,7 +200,10 @@ export function hasAiProvider(): boolean {
   return providerFromEnv() !== null;
 }
 
-export async function generateAiText(prompt: string, options: { timeoutMs?: number; preferFastModel?: boolean } = {}): Promise<string> {
+export async function generateAiText(
+  prompt: string,
+  options: { timeoutMs?: number; preferFastModel?: boolean; jsonMode?: boolean } = {},
+): Promise<string> {
   const config = providerFromEnv();
 
   if (!config) {
@@ -200,10 +215,16 @@ export async function generateAiText(prompt: string, options: { timeoutMs?: numb
 
   try {
     if (config.provider === "gemini") {
-      return await callGemini(config, prompt, controller?.signal, options.preferFastModel);
+      return await callGemini(
+        config,
+        prompt,
+        controller?.signal,
+        options.preferFastModel,
+        options.jsonMode ?? true,
+      );
     }
 
-    return await callChatProvider(config, prompt, controller?.signal);
+    return await callChatProvider(config, prompt, controller?.signal, options.jsonMode ?? true);
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new AiProviderError("AI provider request timed out.", "timeout");
