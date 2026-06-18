@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Eye, Loader2, Plus, RotateCcw, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { NotificationPill } from "@/components/ui/NotificationPill";
-import { generateLocalBullets, inferProjectName, inferTechStack, notesToBullets, parseCommaList, textToBullets } from "@/lib/maker/bullets";
+import { generateLocalBullets, inferTechStack, normalizeExternalUrl, notesToBullets, parseCommaList, polishSummaryLocally, textToBullets } from "@/lib/maker/bullets";
 import { addUniqueValue, autoGroupSkills, commonCourses, commonSkills, filterOptions } from "@/lib/maker/options";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import { getStoredProfile } from "@/lib/resume/persistence";
@@ -97,7 +97,7 @@ function emptyProject(): ProjectDraft {
     linkLabel: "",
     notes: "",
     techStack: "",
-    bulletCount: 3,
+    bulletCount: 4,
     bullets: [],
   };
 }
@@ -148,6 +148,7 @@ export function MakerWorkspace() {
   const [projectExtractingIds, setProjectExtractingIds] = useState<string[]>([]);
   const [experienceGeneratingIds, setExperienceGeneratingIds] = useState<string[]>([]);
   const [optionalConvertingIds, setOptionalConvertingIds] = useState<string[]>([]);
+  const [isPolishingSummary, setIsPolishingSummary] = useState(false);
   const [education, setEducation] = useState<EducationEntry[]>([emptyEducation()]);
   const [projects, setProjects] = useState<ProjectDraft[]>([emptyProject()]);
   const [experience, setExperience] = useState<ExperienceDraft[]>([]);
@@ -241,10 +242,10 @@ export function MakerWorkspace() {
       name: project.name,
       notes: project.notes,
       techStack: parseCommaList(project.techStack),
-      count: project.bulletCount,
+      count: Math.max(4, Math.min(5, project.bulletCount)),
       sectionType: "project" as const,
       generationFocus:
-        "Make bullets strongly tech-stack-oriented and number-oriented. Use percentages, counts, user numbers, or scale only when they are explicitly present in the project details; never invent metrics.",
+        "Rewrite the given project description into a resume-style project entry. Output exactly 1 project title line and 4-5 bullet points. Keep the format professional, concise, and skill-focused. Start with a strong impact bullet including a bold numeric metric, such as **1000+ users**, **80% faster**, or **50% reduced cost**. If no metric is provided, create a realistic placeholder like **[X]+ users** or **[Y]% improvement**. Avoid repeating the same skills or technologies in multiple bullet points. Mention each major technology only once. Focus on architecture, implementation, reliability, performance, privacy, scalability, and user impact. Use strong action verbs like Developed, Architected, Implemented, Built, Designed, Optimized. Do not add fake features. Do not use buzzwords, fluff, or long sentences. Keep each bullet under 2 lines. Bold all numbers, percentages, and measurable impact. Return only the final formatted resume entry.",
     };
 
     setProjectGeneratingIds((current) => addUniqueValue(current, project.id));
@@ -267,7 +268,6 @@ export function MakerWorkspace() {
           item.id === project.id
             ? {
                 ...item,
-                name: item.name || data.suggestedName || inferProjectName(item.notes),
                 techStack: data.techStack?.length
                   ? data.techStack.join(", ")
                   : item.techStack || inferTechStack(item.notes).join(", "),
@@ -283,7 +283,6 @@ export function MakerWorkspace() {
           item.id === project.id
             ? {
                 ...item,
-                name: item.name || inferProjectName(item.notes),
                 techStack: item.techStack || inferTechStack(item.notes).join(", "),
                 bullets: generateLocalBullets(payload),
               }
@@ -303,7 +302,7 @@ export function MakerWorkspace() {
     }
 
     setProjectExtractingIds((current) => addUniqueValue(current, project.id));
-    const techStack = inferTechStack(project.notes);
+    const techStack = inferTechStack(project.notes).slice(0, 6);
     setProjects((current) =>
       current.map((item) =>
         item.id === project.id ? { ...item, techStack: techStack.join(", ") } : item,
@@ -313,6 +312,33 @@ export function MakerWorkspace() {
       setProjectExtractingIds((current) => current.filter((id) => id !== project.id));
     }, 200);
     flash(techStack.length ? "Tech stack extracted." : "No clear tech stack found.");
+  }
+
+  async function polishSummary() {
+    if (!personal.summary.trim()) {
+      flash("Please add a summary first.");
+      return;
+    }
+
+    setIsPolishingSummary(true);
+
+    try {
+      const response = await fetch("/api/ai/polish-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ summary: personal.summary }),
+      });
+      const data = (await response.json()) as { summary?: string; configured?: boolean };
+      const summary = data.summary?.trim() || polishSummaryLocally(personal.summary);
+
+      setPersonal((current) => ({ ...current, summary }));
+      flash(data.configured === false ? "Summary polished locally." : "Summary polished.");
+    } catch {
+      setPersonal((current) => ({ ...current, summary: polishSummaryLocally(current.summary) }));
+      flash("Summary polished locally.");
+    } finally {
+      setIsPolishingSummary(false);
+    }
   }
 
   async function generateBulletsForExperience(item: ExperienceDraft) {
@@ -402,8 +428,8 @@ export function MakerWorkspace() {
         .filter((project) => project.name || project.notes)
         .map<ProjectEntry>((project) => ({
           id: project.id,
-          name: project.name || inferProjectName(project.notes),
-          link: project.link,
+          name: project.name || "Project",
+          link: normalizeExternalUrl(project.link),
           linkLabel: project.linkLabel || project.name || "Project",
           techStack: parseCommaList(project.techStack).length
             ? parseCommaList(project.techStack)
@@ -499,6 +525,15 @@ export function MakerWorkspace() {
                 }
               />
             </label>
+            <button
+              type="button"
+              className="mt-3 inline-flex min-w-40 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-75"
+              onClick={polishSummary}
+              disabled={isPolishingSummary}
+            >
+              {isPolishingSummary ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {isPolishingSummary ? "Polishing..." : "Polish Summary With AI"}
+            </button>
           </Panel>
 
           <Panel title="Education">
@@ -583,7 +618,7 @@ export function MakerWorkspace() {
         </div>
 
         <aside className="space-y-4">
-          <LiveResumePreview resume={liveResume} />
+              <LiveResumePreview resume={liveResume} />
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
             <h2 className="text-lg font-semibold text-ink">Resume Overview</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -778,9 +813,9 @@ function ProjectEditor({
         <TextField label={<TitleWithHint title="Link Name" hint="optional" />} value={project.linkLabel} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, linkLabel: value } : item))} />
         <TextField label={<TitleWithHint title="Link Address" hint="optional" />} value={project.link} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, link: value } : item))} />
         <TextField label={<TitleWithHint title="Add Tech Stack" hint="optional" />} value={project.techStack} onChange={(value) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, techStack: value } : item))} />
-        <label className="block text-sm font-medium text-slate-700">Bullet Count<select className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" value={project.bulletCount} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, bulletCount: Number(event.target.value) } : item))}>{[2, 3, 4, 5, 6].map((count) => <option key={count}>{count}</option>)}</select></label>
+        <label className="block text-sm font-medium text-slate-700">Bullet Count<select className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" value={project.bulletCount} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, bulletCount: Number(event.target.value) } : item))}>{[4, 5].map((count) => <option key={count}>{count}</option>)}</select></label>
       </div>
-      <textarea aria-label="Project details or description" className="mt-3 min-h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={project.notes} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, notes: event.target.value } : item))} placeholder="Paste project details. ResumeOwl will infer name, tech stack, and bullets, then you can edit all of them." />
+      <textarea aria-label="Project details or description" className="mt-3 min-h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={project.notes} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, notes: event.target.value } : item))} placeholder="Paste project details. Add the project name above; ResumeOwl can extract tech stack and generate editable bullets." />
       <EditorButtons
         isExtracting={isExtracting}
         isGenerating={isGenerating}
@@ -861,8 +896,8 @@ function TitleWithHint({ title, hint }: { title: string; hint: string }) {
 
 function LiveResumePreview({ resume }: { resume: ResumeDocument }) {
   return (
-    <article className="min-h-[760px] rounded-lg border border-slate-200 bg-white px-5 py-6 shadow-soft sm:px-7">
-      <header className="border-b border-slate-300 pb-3 text-center">
+    <article className="max-h-[calc(100vh-3rem)] min-h-[760px] overflow-y-auto rounded-lg border border-slate-200 bg-white px-5 py-6 shadow-soft sm:px-7">
+      <header className="pb-3 text-center">
         <h2 className="text-xl font-bold uppercase tracking-normal text-ink">
           {resume.personal.fullName || "Your Name"}
         </h2>
@@ -936,7 +971,7 @@ function LiveResumePreview({ resume }: { resume: ResumeDocument }) {
                   <strong className="inline-flex flex-wrap items-baseline gap-1">
                     {project.name}
                     {project.link ? (
-                      <a className="font-medium italic text-slate-500 underline" href={project.link} target="_blank" rel="noreferrer">
+                      <a className="font-medium italic text-slate-500 underline" href={normalizeExternalUrl(project.link)} target="_blank" rel="noreferrer">
                         {project.linkLabel || "Link"}
                       </a>
                     ) : null}
@@ -1002,10 +1037,26 @@ function PreviewBullets({ items }: { items: string[] }) {
     <ul className="mt-1 list-disc space-y-1 pl-4 text-xs leading-5 text-slate-800">
       {items.map((item) => (
         <li key={item} className="break-words">
-          {item}
+          <InlineStrong text={item} />
         </li>
       ))}
     </ul>
+  );
+}
+
+function InlineStrong({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+
+  return (
+    <>
+      {parts.map((part, index) =>
+        part.startsWith("**") && part.endsWith("**") ? (
+          <strong key={`${part}-${index}`}>{part.slice(2, -2)}</strong>
+        ) : (
+          <span key={`${part}-${index}`}>{part}</span>
+        ),
+      )}
+    </>
   );
 }
 

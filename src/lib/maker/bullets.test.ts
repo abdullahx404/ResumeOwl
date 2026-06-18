@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateLocalBullets, inferProjectName, inferTechStack, notesToBullets, parseCommaList, textToBullets } from "./bullets";
+import { generateLocalBullets, inferProjectName, inferTechStack, normalizeExternalUrl, notesToBullets, parseCommaList, polishSummaryLocally, textToBullets } from "./bullets";
 
 describe("maker bullets", () => {
   it("generates the requested number of truthful local bullets", () => {
@@ -37,6 +37,7 @@ describe("maker bullets", () => {
     });
 
     expect(bullets[0]).toContain("Built a browser-based file sharing platform");
+    expect(bullets[0]).toContain("**1000+** users");
     expect(bullets[0]).not.toContain("Built developed");
   });
 
@@ -72,5 +73,14 @@ describe("maker bullets", () => {
       "Added auth",
       "Improved dashboard",
     ]);
+  });
+
+  it("normalizes bare external links", () => {
+    expect(normalizeExternalUrl("www.resume.owl")).toBe("https://www.resume.owl");
+    expect(normalizeExternalUrl("https://resumeowl.vercel.app")).toBe("https://resumeowl.vercel.app");
+  });
+
+  it("polishes summaries locally without flashy wording", () => {
+    expect(polishSummaryLocally(" passionate software engineering student. ")).not.toMatch(/passionate/i);
   });
 });

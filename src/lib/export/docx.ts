@@ -6,6 +6,7 @@ import {
   Paragraph,
   TextRun,
 } from "docx";
+import { normalizeExternalUrl } from "@/lib/maker/bullets";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import type { ResumeDocument, ResumeSectionId } from "@/types/resume";
 
@@ -17,9 +18,17 @@ function heading(text: string) {
   });
 }
 
+function inlineTextRuns(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part) =>
+    part.startsWith("**") && part.endsWith("**")
+      ? new TextRun({ text: part.slice(2, -2), bold: true })
+      : new TextRun(part),
+  );
+}
+
 function bullet(text: string) {
   return new Paragraph({
-    text,
+    children: inlineTextRuns(text),
     bullet: { level: 0 },
     spacing: { after: 60 },
   });
@@ -111,7 +120,7 @@ export function buildDocxDocument(resume: ResumeDocument): Document {
               ? [
                   new TextRun({ text: " " }),
                   new ExternalHyperlink({
-                    link: project.link,
+                    link: normalizeExternalUrl(project.link),
                     children: [
                       new TextRun({
                         text: project.linkLabel || "Link",

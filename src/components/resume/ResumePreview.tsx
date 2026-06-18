@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp, Copy, Download, FileDown, Printer, RotateCcw, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { downloadBlob, downloadTextFile, safeFileName } from "@/lib/export/filenames";
+import { normalizeExternalUrl } from "@/lib/maker/bullets";
 import { createLatexStyleSource } from "@/lib/resume/source";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import { cn } from "@/lib/utils";
@@ -221,7 +222,7 @@ export function ResumePreview() {
       </aside>
 
       <article className="resume-page mx-auto min-h-[1000px] w-full max-w-[850px] bg-white px-8 py-10 shadow-soft sm:px-12 print:min-h-0 print:max-w-none print:shadow-none">
-        <header className="border-b border-slate-300 pb-4 text-center">
+        <header className="pb-4 text-center">
           <input
             aria-label="Resume full name"
             className="w-full bg-transparent text-center text-3xl font-bold uppercase tracking-normal text-ink outline-none"
@@ -343,7 +344,7 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
                 {project.link ? (
                   <a
                     className="text-xs font-medium italic text-slate-500 underline"
-                    href={project.link}
+                    href={normalizeExternalUrl(project.link)}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -397,9 +398,25 @@ function BulletList({ items }: { items: string[] }) {
     <ul className="mt-1 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-800">
       {items.map((item) => (
         <li key={item} className={cn("break-words")}>
-          {item}
+          <InlineStrong text={item} />
         </li>
       ))}
     </ul>
+  );
+}
+
+function InlineStrong({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+
+  return (
+    <>
+      {parts.map((part, index) =>
+        part.startsWith("**") && part.endsWith("**") ? (
+          <strong key={`${part}-${index}`}>{part.slice(2, -2)}</strong>
+        ) : (
+          <span key={`${part}-${index}`}>{part}</span>
+        ),
+      )}
+    </>
   );
 }

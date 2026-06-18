@@ -28,4 +28,20 @@ describe("createLatexStyleSource", () => {
 
     expect(source).toContain("\\href{https://github.com/example/resumeowl}{GitHub}");
   });
+
+  it("normalizes bare project links and converts bold markers", () => {
+    const source = createLatexStyleSource({
+      ...sampleResume,
+      projects: [
+        {
+          ...sampleResume.projects[0],
+          link: "www.resume.owl",
+          bullets: ["Built for **1000+ users**."],
+        },
+      ],
+    });
+
+    expect(source).toContain("\\href{https://www.resume.owl}{GitHub}");
+    expect(source).toContain("\\textbf{1000+ users}");
+  });
 });

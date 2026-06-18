@@ -1,4 +1,5 @@
 import type { ResumeDocument } from "@/types/resume";
+import { normalizeExternalUrl } from "@/lib/maker/bullets";
 import { formatResumeDateRange } from "./dates";
 
 function escapeLatex(value: string): string {
@@ -18,7 +19,18 @@ function escapeLatexUrl(value: string): string {
 }
 
 function bullets(items: string[]): string {
-  return items.map((item) => `  \\item ${escapeLatex(item)}`).join("\n");
+  return items.map((item) => `  \\item ${escapeLatexWithBold(item)}`).join("\n");
+}
+
+function escapeLatexWithBold(value: string): string {
+  return value
+    .split(/(\*\*[^*]+\*\*)/g)
+    .map((part) =>
+      part.startsWith("**") && part.endsWith("**")
+        ? `\\textbf{${escapeLatex(part.slice(2, -2))}}`
+        : escapeLatex(part),
+    )
+    .join("");
 }
 
 export function createLatexStyleSource(resume: ResumeDocument): string {
@@ -75,7 +87,7 @@ export function createLatexStyleSource(resume: ResumeDocument): string {
       lines.push("\\section*{Projects}");
       for (const project of resume.projects) {
         const projectTitle = project.link
-          ? `\\textbf{${escapeLatex(project.name)}} \\hfill \\href{${escapeLatexUrl(project.link)}}{${escapeLatex(project.linkLabel || "Link")}}`
+          ? `\\textbf{${escapeLatex(project.name)}} \\hfill \\href{${escapeLatexUrl(normalizeExternalUrl(project.link))}}{${escapeLatex(project.linkLabel || "Link")}}`
           : `\\textbf{${escapeLatex(project.name)}}`;
         lines.push(projectTitle);
         if (project.techStack?.length) {

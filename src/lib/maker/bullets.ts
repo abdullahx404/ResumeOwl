@@ -4,6 +4,10 @@ const actionVerbs = ["Built", "Designed", "Implemented", "Integrated", "Improved
 const leadingActionPattern =
   /^(built|build|designed|design|implemented|implement|integrated|integrate|improved|improve|created|create|developed|develop|architected|architect|engineered|engineer|made|make)\s+/i;
 
+function boldMeasurables(value: string): string {
+  return value.replace(/\b(\d[\d,.]*\+?%?|\[[XY]\]\+?|\[[XY]\]%)(?=\s|$|[,.])/g, "**$1**");
+}
+
 function cleanNotes(notes: string): string[] {
   return notes
     .split(/[\n.;]+/)
@@ -52,15 +56,25 @@ export function generateLocalBullets({
     const stack = tech ? ` using ${tech}` : "";
 
     if (index === 0) {
-      return `${verb} ${detail}${stack}.`;
+      return boldMeasurables(`${verb} ${detail}${stack}.`);
     }
 
     if (index === 1) {
-      return `${verb} reusable workflows for ${subject}${stack}.`;
+      return boldMeasurables(`${verb} reusable workflows for ${subject}${stack}.`);
     }
 
-    return `${verb} clear technical documentation and implementation notes for ${subject}.`;
+    return boldMeasurables(`${verb} clear technical documentation and implementation notes for ${subject}.`);
   });
+}
+
+export function polishSummaryLocally(summary: string): string {
+  return summary
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\bpassionate\b|\benthusiastic\b|\benthusiast\b|\bhighly motivated\b/gi, "")
+    .replace(/\s+,/g, ",")
+    .replace(/\s+\./g, ".")
+    .replace(/^\w/, (char) => char.toUpperCase());
 }
 
 export function parseCommaList(value: string): string[] {
@@ -147,6 +161,20 @@ export function inferProjectName(notes: string): string {
     .slice(0, 7)
     .join(" ")
     .replace(/^\w/, (char) => char.toUpperCase());
+}
+
+export function normalizeExternalUrl(value: string): string {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) || trimmed.startsWith("mailto:") || trimmed.startsWith("tel:")) {
+    return trimmed;
+  }
+
+  return `https://${trimmed}`;
 }
 
 export function inferTechStack(notes: string): string[] {
