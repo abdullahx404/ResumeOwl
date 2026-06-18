@@ -24,7 +24,7 @@ describe("POST /api/ai/generate-bullets", () => {
 
     expect(response.status).toBe(200);
     expect(data.configured).toBe(false);
-    expect(data.bullets).toHaveLength(3);
+    expect(data.bullets).toHaveLength(4);
     expect(data.suggestedName).toBeTruthy();
   });
 

@@ -250,7 +250,7 @@ function buildIssues({
       id: "missing-keywords",
       severity: "warning",
       title: "Missing job keywords",
-      detail: "Add truthful missing terms only when they match your real experience.",
+      detail: "Some important role skills or tools from the job post were not found in the resume.",
     });
   }
 
@@ -347,7 +347,7 @@ export function analyzeResumeLocally({
   });
   const suggestedImprovements = [
     missingKeywords.length
-      ? `Review missing keywords: ${missingKeywords.slice(0, 8).join(", ")}. Add only the terms you can truthfully support.`
+      ? `Review missing keywords: ${missingKeywords.slice(0, 8).join(", ")}. Add relevant ones only when they match your actual work.`
       : "Keyword coverage is strong for the provided job description.",
     weakBullets.length
       ? "Rewrite weak bullets with action verbs, concrete technical work, and supported metrics."

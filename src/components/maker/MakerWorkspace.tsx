@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { Eye, Loader2, Plus, RotateCcw, Sparkles, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NotificationPill } from "@/components/ui/NotificationPill";
-import { generateLocalBullets, inferTechStack, normalizeExternalUrl, notesToBullets, parseCommaList, polishSummaryLocally, textToBullets } from "@/lib/maker/bullets";
+import { extractPlainSummary, generateLocalBullets, inferTechStack, normalizeExternalUrl, notesToBullets, parseCommaList, polishSummaryLocally, textToBullets } from "@/lib/maker/bullets";
 import { addUniqueValue, autoGroupSkills, commonCourses, commonSkills, filterOptions } from "@/lib/maker/options";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import { getStoredProfile } from "@/lib/resume/persistence";
@@ -329,7 +329,7 @@ export function MakerWorkspace() {
         body: JSON.stringify({ summary: personal.summary }),
       });
       const data = (await response.json()) as { summary?: string; configured?: boolean };
-      const summary = data.summary?.trim() || polishSummaryLocally(personal.summary);
+      const summary = extractPlainSummary(data.summary?.trim() || polishSummaryLocally(personal.summary));
 
       setPersonal((current) => ({ ...current, summary }));
       flash(data.configured === false ? "Summary polished locally." : "Summary polished.");
@@ -455,7 +455,13 @@ export function MakerWorkspace() {
           items: section.items.map((item) => item.trim()).filter(Boolean),
         }))
         .filter((section) => section.title && section.items.length),
-      sectionOrder: ["education", "skills", "projects", "experience", "optional"],
+      sectionOrder: [
+        ...(education.some((item) => item.institute || item.degree) ? (["education"] as const) : []),
+        ...(buildSkillGroups().length ? (["skills"] as const) : []),
+        ...(projects.some((project) => project.name || project.notes) ? (["projects"] as const) : []),
+        ...(experience.some((item) => item.role || item.company) ? (["experience"] as const) : []),
+        ...(optionalSections.some((section) => section.title && section.items.some((item) => item.trim())) ? (["optional"] as const) : []),
+      ],
     };
 
     return resume;
@@ -515,16 +521,11 @@ export function MakerWorkspace() {
                   </label>
                 ))}
             </div>
-            <label className="mt-3 block text-sm font-medium text-slate-700">
-              Summary
-              <textarea
-                className="mt-1 min-h-20 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100"
-                value={personal.summary}
-                onChange={(event) =>
-                  setPersonal((current) => ({ ...current, summary: event.target.value }))
-                }
-              />
-            </label>
+            <AutoGrowTextarea
+              label="Summary"
+              value={personal.summary}
+              onChange={(value) => setPersonal((current) => ({ ...current, summary: value }))}
+            />
             <button
               type="button"
               className="mt-3 inline-flex min-w-40 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-75"
@@ -617,7 +618,7 @@ export function MakerWorkspace() {
           </Panel>
         </div>
 
-        <aside className="space-y-4">
+        <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
               <LiveResumePreview resume={liveResume} />
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
             <h2 className="text-lg font-semibold text-ink">Resume Overview</h2>
@@ -670,6 +671,33 @@ function TextField({ label, value, onChange, type = "text" }: { label: React.Rea
     <label className="block text-sm font-medium text-slate-700">
       {label}
       <input type={type} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
+}
+
+function AutoGrowTextarea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+
+    if (!textarea) {
+      return;
+    }
+
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [value]);
+
+  return (
+    <label className="mt-3 block text-sm font-medium text-slate-700">
+      {label}
+      <textarea
+        ref={textareaRef}
+        className="mt-1 min-h-20 w-full resize-none overflow-hidden rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
     </label>
   );
 }

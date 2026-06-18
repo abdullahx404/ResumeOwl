@@ -1,6 +1,5 @@
 import { commonSkills } from "./options";
 
-const actionVerbs = ["Built", "Designed", "Implemented", "Integrated", "Improved", "Created"];
 const leadingActionPattern =
   /^(built|build|designed|design|implemented|implement|integrated|integrate|improved|improve|created|create|developed|develop|architected|architect|engineered|engineer|made|make)\s+/i;
 
@@ -13,6 +12,18 @@ function cleanNotes(notes: string): string[] {
     .split(/[\n.;]+/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function firstMeaningfulSentence(notes: string): string {
+  return cleanNotes(notes)
+    .map((item) => item.replace(/^[-*•]\s*/, "").replace(leadingActionPattern, "").trim())
+    .find((item) => item.length > 8) ?? "project functionality";
+}
+
+function metricFromNotes(notes: string): string {
+  const match = notes.match(/\b\d[\d,.]*\+?\s*(?:users|customers|requests|files|downloads|seconds|minutes|hours|%|percent)\b/i);
+
+  return match?.[0] ?? "[X]+ users";
 }
 
 export function notesToBullets(notes: string): string[] {
@@ -35,40 +46,68 @@ export function generateLocalBullets({
   count: number;
   sectionType: "project" | "experience";
 }): string[] {
-  const safeCount = Math.min(6, Math.max(2, count));
-  const noteParts = cleanNotes(notes);
-  const tech = techStack.filter(Boolean).join(", ");
+  const safeCount = Math.min(5, Math.max(sectionType === "project" ? 4 : 3, count));
+  const techItems = [...new Set(techStack.filter(Boolean))];
+  const primaryTech = techItems.slice(0, 3).join(", ");
+  const secondaryTech = techItems.slice(3, 6).join(", ");
   const subject = name.trim() || (sectionType === "project" ? "project" : "role");
-  const base = noteParts.length
-    ? noteParts
-    : [
-        sectionType === "project"
-          ? `developed ${subject}`
-          : `contributed to ${subject} responsibilities`,
-      ];
+  const metric = metricFromNotes(notes);
+  const firstDetail = firstMeaningfulSentence(notes)
+    .replace(metric, "")
+    .replace(/\s+/g, " ")
+    .replace(/\bused by\s*[,.]?/i, "")
+    .replace(/^\w/, (char) => char.toLowerCase())
+    .trim();
 
-  return Array.from({ length: safeCount }, (_, index) => {
-    const verb = actionVerbs[index % actionVerbs.length];
-    const detail = base[index % base.length]
-      .replace(/^[-*•]\s*/, "")
-      .replace(leadingActionPattern, "")
-      .replace(/^\w/, (char) => char.toLowerCase());
-    const stack = tech ? ` using ${tech}` : "";
+  if (sectionType === "project") {
+    return [
+      `Developed ${subject} for ${metric}, supporting ${firstDetail || "the core project workflow"}${primaryTech ? ` with ${primaryTech}` : ""}.`,
+      `Architected the core workflow for direct and reliable project execution${secondaryTech ? ` using ${secondaryTech}` : ""}.`,
+      "Implemented privacy-focused behavior without relying on persistent cloud storage.",
+      "Optimized the user flow for faster sharing, lower friction, and clearer transfer status.",
+      "Designed a concise interface that keeps setup simple while preserving reliability.",
+    ].slice(0, safeCount).map(boldMeasurables);
+  }
 
-    if (index === 0) {
-      return boldMeasurables(`${verb} ${detail}${stack}.`);
+  return [
+    `Developed ${subject} work around ${firstDetail}.`,
+    "Coordinated technical tasks with clear ownership, follow-up, and execution.",
+    "Improved team workflow by documenting decisions, blockers, and implementation details.",
+    "Contributed to reliable delivery through testing, communication, and issue tracking.",
+    "Turned ambiguous requirements into actionable technical tasks.",
+  ].slice(0, safeCount).map(boldMeasurables);
+}
+
+export function extractPlainSummary(value: string): string {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+
+    if (typeof parsed === "string") {
+      return parsed.trim();
     }
 
-    if (index === 1) {
-      return boldMeasurables(`${verb} reusable workflows for ${subject}${stack}.`);
+    if (parsed && typeof parsed === "object" && "summary" in parsed) {
+      return String((parsed as { summary?: unknown }).summary ?? "").trim();
     }
+  } catch {
+    const match = trimmed.match(/"summary"\s*:\s*"([^"]+)"/);
 
-    return boldMeasurables(`${verb} clear technical documentation and implementation notes for ${subject}.`);
-  });
+    if (match?.[1]) {
+      return match[1].trim();
+    }
+  }
+
+  return trimmed;
 }
 
 export function polishSummaryLocally(summary: string): string {
-  return summary
+  return extractPlainSummary(summary)
     .trim()
     .replace(/\s+/g, " ")
     .replace(/\bpassionate\b|\benthusiastic\b|\benthusiast\b|\bhighly motivated\b/gi, "")

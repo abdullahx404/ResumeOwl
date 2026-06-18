@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateLocalBullets, inferProjectName, inferTechStack, normalizeExternalUrl, notesToBullets, parseCommaList, polishSummaryLocally, textToBullets } from "./bullets";
+import { extractPlainSummary, generateLocalBullets, inferProjectName, inferTechStack, normalizeExternalUrl, notesToBullets, parseCommaList, polishSummaryLocally, textToBullets } from "./bullets";
 
 describe("maker bullets", () => {
   it("generates the requested number of truthful local bullets", () => {
@@ -15,7 +15,7 @@ describe("maker bullets", () => {
     expect(bullets[0]).toContain("React, TypeScript");
   });
 
-  it("keeps bullet counts between 2 and 6", () => {
+  it("keeps project bullet counts between 4 and 5", () => {
     expect(
       generateLocalBullets({
         name: "App",
@@ -24,7 +24,7 @@ describe("maker bullets", () => {
         count: 10,
         sectionType: "project",
       }),
-    ).toHaveLength(6);
+    ).toHaveLength(5);
   });
 
   it("does not duplicate leading action verbs in fallback bullets", () => {
@@ -36,7 +36,8 @@ describe("maker bullets", () => {
       sectionType: "project",
     });
 
-    expect(bullets[0]).toContain("Built a browser-based file sharing platform");
+    expect(bullets[0]).toContain("Developed Oppassum");
+    expect(bullets[0]).toContain("a browser-based file sharing platform");
     expect(bullets[0]).toContain("**1000+** users");
     expect(bullets[0]).not.toContain("Built developed");
   });
@@ -82,5 +83,11 @@ describe("maker bullets", () => {
 
   it("polishes summaries locally without flashy wording", () => {
     expect(polishSummaryLocally(" passionate software engineering student. ")).not.toMatch(/passionate/i);
+  });
+
+  it("unwraps AI summary JSON into plain summary text", () => {
+    expect(extractPlainSummary('{"summary":"Software engineering student focused on full-stack projects."}')).toBe(
+      "Software engineering student focused on full-stack projects.",
+    );
   });
 });

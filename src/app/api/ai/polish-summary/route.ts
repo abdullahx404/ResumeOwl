@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateAiText, hasAiProvider } from "@/lib/ai/provider";
-import { polishSummaryLocally } from "@/lib/maker/bullets";
+import { extractPlainSummary, polishSummaryLocally } from "@/lib/maker/bullets";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const polished = (await generateAiText(buildPrompt(summary), {
+    const polished = extractPlainSummary(await generateAiText(buildPrompt(summary), {
       preferFastModel: true,
       timeoutMs: summaryTimeoutMs,
     })).trim();

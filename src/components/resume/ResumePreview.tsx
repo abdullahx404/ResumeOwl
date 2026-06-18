@@ -8,7 +8,7 @@ import { createLatexStyleSource } from "@/lib/resume/source";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/stores/resume-store";
-import type { ResumeSectionId } from "@/types/resume";
+import type { ResumeDocument, ResumeSectionId } from "@/types/resume";
 
 const sectionLabels: Record<ResumeSectionId, string> = {
   education: "Education",
@@ -69,6 +69,7 @@ export function ResumePreview() {
     useResumeStore();
 
   const source = useMemo(() => createLatexStyleSource(resume), [resume]);
+  const visibleSectionOrder = resume.sectionOrder.filter((sectionId) => sectionHasContent(sectionId, resume));
 
   function moveSection(sectionId: ResumeSectionId, direction: "up" | "down") {
     const currentIndex = resume.sectionOrder.indexOf(sectionId);
@@ -262,22 +263,19 @@ export function ResumePreview() {
               </button>
             </div>
             <h2 className="resume-heading">Summary</h2>
-            <textarea
-              aria-label="Resume summary"
-              className="mt-2 min-h-20 w-full resize-none bg-transparent text-sm leading-6 text-slate-800 outline-none"
-              value={resume.summary ?? ""}
-              onChange={(event) => updateSummary(event.target.value)}
-            />
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-800">
+              {resume.summary}
+            </p>
           </section>
         ) : null}
 
         <div className="mt-2 space-y-5">
-          {resume.sectionOrder.map((sectionId, index) => (
+          {visibleSectionOrder.map((sectionId, index) => (
             <section key={sectionId} className="relative pt-3">
               <SectionControls
                 sectionId={sectionId}
                 index={index}
-                total={resume.sectionOrder.length}
+                total={visibleSectionOrder.length}
                 onMove={moveSection}
                 onRemove={removeSection}
               />
@@ -289,6 +287,26 @@ export function ResumePreview() {
       </article>
     </div>
   );
+}
+
+function sectionHasContent(sectionId: ResumeSectionId, resume: ResumeDocument) {
+  if (sectionId === "education") {
+    return resume.education.length > 0 || resume.courses.length > 0;
+  }
+
+  if (sectionId === "skills") {
+    return resume.skillGroups.some((group) => group.skills.length > 0);
+  }
+
+  if (sectionId === "projects") {
+    return resume.projects.length > 0;
+  }
+
+  if (sectionId === "experience") {
+    return resume.experience.length > 0;
+  }
+
+  return resume.optionalSections.some((section) => section.items.some((item) => item.trim()));
 }
 
 function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
