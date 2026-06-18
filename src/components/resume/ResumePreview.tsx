@@ -342,7 +342,7 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
                 {project.name}
                 {project.link ? (
                   <a
-                    className="text-xs font-semibold text-owl-700 underline"
+                    className="text-xs font-medium italic text-slate-500 underline"
                     href={project.link}
                     target="_blank"
                     rel="noreferrer"

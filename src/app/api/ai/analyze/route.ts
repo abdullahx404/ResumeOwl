@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { analyzeResumeLocally } from "@/lib/ats/analyzer";
 import { extractJsonObject } from "@/lib/ai/json";
-import { generateAiText, hasAiProvider } from "@/lib/ai/provider";
+import { AiProviderError, generateAiText, hasAiProvider } from "@/lib/ai/provider";
 import { buildAnalyzePrompt } from "@/lib/ai/prompts";
 import {
   aiAnalyzerFeedbackSchema,
@@ -11,7 +11,29 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 10;
 
-const aiAnalyzeTimeoutMs = 8000;
+const aiAnalyzeTimeoutMs = 9000;
+
+function aiErrorMessage(error: unknown) {
+  if (error instanceof AiProviderError) {
+    if (error.code === "timeout") {
+      return "AI feedback timed out before Vercel's function limit. The local scan is still valid.";
+    }
+
+    if (error.status === 429) {
+      return "AI provider rate limit reached. The local scan is still valid.";
+    }
+
+    if (error.status === 400 || error.status === 404) {
+      return "AI provider rejected the configured model or request. Check AI_MODEL in deployment settings.";
+    }
+
+    if (error.code === "provider-error") {
+      return "AI provider could not be reached from this environment. The local scan is still valid.";
+    }
+  }
+
+  return "AI feedback could not be generated safely. Local analysis is still available.";
+}
 
 export async function POST(request: Request) {
   let payload: unknown;
@@ -47,6 +69,7 @@ export async function POST(request: Request) {
     const localAnalysis = analyzeResumeLocally(parsed.data);
     const prompt = buildAnalyzePrompt(parsed.data, localAnalysis);
     const rawFeedback = await generateAiText(prompt, {
+      preferFastModel: true,
       timeoutMs: aiAnalyzeTimeoutMs,
     });
     const json = extractJsonObject(rawFeedback);
@@ -56,11 +79,11 @@ export async function POST(request: Request) {
       configured: true,
       feedback,
     });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
       {
         configured: true,
-        error: "AI feedback could not be generated safely. Local analysis is still available.",
+        error: aiErrorMessage(error),
       },
     );
   }

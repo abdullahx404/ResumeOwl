@@ -280,24 +280,32 @@ function scoreResult({
   detectedSections: string[];
   contactInfo: ReturnType<typeof detectContactInfo>;
   weakBullets: WeakBullet[];
-}): number {
-  const keywordScore = jobKeywords.length
-    ? (matchedKeywords.length / jobKeywords.length) * 45
+}): AnalysisResult["scoreBreakdown"] & { total: number } {
+  const keywordCoverage = jobKeywords.length
+    ? (matchedKeywords.length / jobKeywords.length) * 35
     : 20;
-  const requiredScore = requiredSkillMatches.length
+  const requiredSkills = requiredSkillMatches.length
     ? (requiredSkillMatches.filter((skill) => skill.present).length /
         requiredSkillMatches.length) *
-      20
-    : 15;
-  const sectionScore = (detectedSections.length / Object.keys(sectionPatterns).length) * 15;
-  const contactScore =
+      25
+    : 20;
+  const sections = (detectedSections.length / Object.keys(sectionPatterns).length) * 15;
+  const contact =
     Number(contactInfo.email) * 7 + Number(contactInfo.phone) * 5 + Number(contactInfo.links) * 3;
-  const bulletPenalty = Math.min(15, weakBullets.length * 3);
-
-  return Math.max(
+  const bulletQuality = Math.max(0, 10 - Math.min(10, weakBullets.length * 2));
+  const total = Math.max(
     0,
-    Math.min(100, Math.round(keywordScore + requiredScore + sectionScore + contactScore - bulletPenalty)),
+    Math.min(100, Math.round(keywordCoverage + requiredSkills + sections + contact + bulletQuality)),
   );
+
+  return {
+    keywordCoverage: Math.round(keywordCoverage),
+    requiredSkills: Math.round(requiredSkills),
+    sections: Math.round(sections),
+    contact: Math.round(contact),
+    bulletQuality: Math.round(bulletQuality),
+    total,
+  };
 }
 
 export function analyzeResumeLocally({
@@ -329,7 +337,7 @@ export function analyzeResumeLocally({
     weakBullets,
     missingKeywords,
   });
-  const score = scoreResult({
+  const scoreBreakdown = scoreResult({
     matchedKeywords,
     jobKeywords,
     requiredSkillMatches,
@@ -350,7 +358,14 @@ export function analyzeResumeLocally({
   ];
 
   return {
-    score,
+    score: scoreBreakdown.total,
+    scoreBreakdown: {
+      keywordCoverage: scoreBreakdown.keywordCoverage,
+      requiredSkills: scoreBreakdown.requiredSkills,
+      sections: scoreBreakdown.sections,
+      contact: scoreBreakdown.contact,
+      bulletQuality: scoreBreakdown.bulletQuality,
+    },
     matchedKeywords,
     missingKeywords,
     requiredSkillMatches,

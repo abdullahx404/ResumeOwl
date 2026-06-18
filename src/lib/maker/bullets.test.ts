@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateLocalBullets, inferProjectName, inferTechStack, parseCommaList, textToBullets } from "./bullets";
+import { generateLocalBullets, inferProjectName, inferTechStack, notesToBullets, parseCommaList, textToBullets } from "./bullets";
 
 describe("maker bullets", () => {
   it("generates the requested number of truthful local bullets", () => {
@@ -53,10 +53,24 @@ describe("maker bullets", () => {
     );
   });
 
+  it("does not infer short tech names from ordinary words", () => {
+    expect(inferTechStack("Created clean dashboards for reporting")).not.toEqual(
+      expect.arrayContaining(["C", "R", "Go"]),
+    );
+  });
+
   it("converts plain text into editable bullets", () => {
     expect(textToBullets("Won hackathon\nLed coding club", 3)).toEqual([
       "Won hackathon.",
       "Led coding club.",
+    ]);
+  });
+
+  it("keeps original project note lines as bullets before generation", () => {
+    expect(notesToBullets("Built app\n- Added auth\n\nImproved dashboard")).toEqual([
+      "Built app",
+      "Added auth",
+      "Improved dashboard",
     ]);
   });
 });

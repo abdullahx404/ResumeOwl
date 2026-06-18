@@ -103,6 +103,13 @@ export type KeywordMatch = {
 
 export type AnalysisResult = {
   score: number;
+  scoreBreakdown: {
+    keywordCoverage: number;
+    requiredSkills: number;
+    sections: number;
+    contact: number;
+    bulletQuality: number;
+  };
   matchedKeywords: string[];
   missingKeywords: string[];
   requiredSkillMatches: KeywordMatch[];

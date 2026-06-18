@@ -1,3 +1,5 @@
+import { commonSkills } from "./options";
+
 const actionVerbs = ["Built", "Designed", "Implemented", "Integrated", "Improved", "Created"];
 const leadingActionPattern =
   /^(built|build|designed|design|implemented|implement|integrated|integrate|improved|improve|created|create|developed|develop|architected|architect|engineered|engineer|made|make)\s+/i;
@@ -6,6 +8,13 @@ function cleanNotes(notes: string): string[] {
   return notes
     .split(/[\n.;]+/)
     .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function notesToBullets(notes: string): string[] {
+  return notes
+    .split(/\r?\n/)
+    .map((item) => item.trim().replace(/^[-*•]\s*/, ""))
     .filter(Boolean);
 }
 
@@ -62,6 +71,43 @@ export function parseCommaList(value: string): string[] {
 }
 
 const knownTech = [
+  ...commonSkills,
+  ".NET",
+  "ASP.NET",
+  "Bash",
+  "Bootstrap",
+  "Chakra UI",
+  "Cloudflare",
+  "Dart",
+  "Drizzle",
+  "Electron",
+  "Expo",
+  "Framer Motion",
+  "GraphQL",
+  "gRPC",
+  "Heroku",
+  "Java Spring",
+  "Kotlin",
+  "Laravel",
+  "Mongoose",
+  "Netlify",
+  "PHP",
+  "Postman",
+  "RabbitMQ",
+  "Railway",
+  "Ruby on Rails",
+  "Sass",
+  "Shadcn UI",
+  "Socket.io",
+  "Spring Boot",
+  "Svelte",
+  "Swift",
+  "TanStack Query",
+  "tRPC",
+  "Ubuntu",
+  "WebRTC",
+  "WebSockets",
+  "Zustand",
   "AWS",
   "Docker",
   "Express.js",
@@ -106,7 +152,16 @@ export function inferProjectName(notes: string): string {
 export function inferTechStack(notes: string): string[] {
   const normalized = notes.toLowerCase();
 
-  return knownTech.filter((tech) => normalized.includes(tech.toLowerCase()));
+  return [...new Set(knownTech)].filter((tech) => {
+    const term = tech.toLowerCase();
+
+    if (term.length <= 2 || /^[a-z+#.]+$/i.test(term)) {
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(`(^|[^a-z0-9+#.])${escaped}($|[^a-z0-9+#.])`, "i").test(normalized);
+    }
+
+    return normalized.includes(term);
+  });
 }
 
 export function textToBullets(text: string, count = 3): string[] {

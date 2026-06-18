@@ -57,12 +57,13 @@ textarea {
 
 @media print {
   @page {
-    margin: 0.55in;
+    margin: 0;
     size: letter;
   }
 
   body {
     background: white;
+    margin: 0;
   }
 
   .no-print {
@@ -72,7 +73,7 @@ textarea {
   .resume-page {
     box-shadow: none !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 0.55in !important;
     width: 100% !important;
     max-width: none !important;
     min-height: 0 !important;

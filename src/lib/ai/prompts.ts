@@ -38,9 +38,10 @@ Return this JSON shape:
 Local ATS analysis:
 ${JSON.stringify({
     score: localAnalysis.score,
-    missingKeywords: localAnalysis.missingKeywords.slice(0, 20),
+    scoreBreakdown: localAnalysis.scoreBreakdown,
+    missingKeywords: localAnalysis.missingKeywords.slice(0, 12),
     requiredSkillMatches: localAnalysis.requiredSkillMatches,
-    weakBullets: localAnalysis.weakBullets.slice(0, 8),
+    weakBullets: localAnalysis.weakBullets.slice(0, 5),
     atsIssues: localAnalysis.atsIssues,
   })}
 
@@ -48,10 +49,10 @@ Required skills:
 ${request.requiredSkills.join(", ") || "None provided"}
 
 Resume:
-${truncate(request.resumeText, 12_000)}
+${truncate(request.resumeText, 6_000)}
 
 Job description:
-${truncate(request.jobDescription, 8_000)}
+${truncate(request.jobDescription, 4_000)}
 `.trim();
 }
 

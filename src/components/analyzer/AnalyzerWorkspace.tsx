@@ -27,6 +27,7 @@ export function AnalyzerWorkspace() {
     "idle" | "loading" | "ready" | "unavailable" | "error"
   >("idle");
   const [notice, setNotice] = useState("");
+  const [aiError, setAiError] = useState("");
   const [isParsing, setIsParsing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -82,6 +83,7 @@ export function AnalyzerWorkspace() {
     });
     setResult(localResult);
     setAiFeedback(null);
+    setAiError("");
     setAiStatus("loading");
 
     try {
@@ -103,6 +105,7 @@ export function AnalyzerWorkspace() {
       };
 
       if (!response.ok || !data.feedback) {
+        setAiError(data.error ?? "");
         setAiStatus(data.configured === false ? "unavailable" : "error");
         return;
       }
@@ -110,6 +113,7 @@ export function AnalyzerWorkspace() {
       setAiFeedback(data.feedback);
       setAiStatus("ready");
     } catch {
+      setAiError("AI feedback could not be reached. The local scan is still valid.");
       setAiStatus("error");
     } finally {
       setIsAnalyzing(false);
@@ -123,6 +127,7 @@ export function AnalyzerWorkspace() {
     setParsedFiles([]);
     setResult(null);
     setAiFeedback(null);
+    setAiError("");
     setAiStatus("idle");
     setIsAnalyzing(false);
     setNotice("Analyzer data cleared from this session.");
@@ -235,6 +240,7 @@ export function AnalyzerWorkspace() {
             <AnalysisResults
               result={result}
               aiFeedback={aiFeedback}
+              aiError={aiError}
               aiStatus={aiStatus}
             />
           ) : (
@@ -264,10 +270,12 @@ function EmptyResults() {
 function AnalysisResults({
   result,
   aiFeedback,
+  aiError,
   aiStatus,
 }: {
   result: AnalysisResult;
   aiFeedback: AiAnalyzerFeedback | null;
+  aiError: string;
   aiStatus: "idle" | "loading" | "ready" | "unavailable" | "error";
 }) {
   const requiredSkillMatchedCount = result.requiredSkillMatches.filter((skill) => skill.present).length;
@@ -335,6 +343,21 @@ function AnalysisResults({
         </div>
       </ResultBlock>
 
+      <ResultBlock title="Score breakdown">
+        <div className="grid gap-2 text-sm sm:grid-cols-5">
+          <Metric label="Keywords /35" value={result.scoreBreakdown.keywordCoverage} />
+          <Metric label="Required /25" value={result.scoreBreakdown.requiredSkills} />
+          <Metric label="Sections /15" value={result.scoreBreakdown.sections} />
+          <Metric label="Contact /15" value={result.scoreBreakdown.contact} />
+          <Metric label="Bullets /10" value={result.scoreBreakdown.bulletQuality} />
+        </div>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          The local score is calculated from skill keyword coverage, required skill matches,
+          common ATS sections, contact details, and bullet quality. Generic filler words from the
+          job post are ignored so the score focuses on real skills, tools, courses, and qualifications.
+        </p>
+      </ResultBlock>
+
       <ResultBlock title="Weak bullet points">
         {result.weakBullets.length ? (
           <div className="space-y-3">
@@ -366,7 +389,7 @@ function AnalysisResults({
         <p className="text-sm leading-6 text-slate-700">{result.beforeAfterSummary}</p>
       </ResultBlock>
 
-      <AiFeedbackPanel status={aiStatus} feedback={aiFeedback} />
+      <AiFeedbackPanel status={aiStatus} feedback={aiFeedback} error={aiError} />
     </div>
   );
 }
@@ -423,9 +446,11 @@ function PillList({
 function AiFeedbackPanel({
   status,
   feedback,
+  error,
 }: {
   status: "idle" | "loading" | "ready" | "unavailable" | "error";
   feedback: AiAnalyzerFeedback | null;
+  error: string;
 }) {
   if (status === "idle") {
     return null;
@@ -461,7 +486,7 @@ function AiFeedbackPanel({
       <div className="rounded-lg border border-red-100 bg-red-50 p-4">
         <p className="text-sm font-semibold text-red-950">AI Feedback Failed, Local Scan Validated</p>
         <p className="mt-1 text-sm leading-6 text-red-900">
-          The local scan is still valid. Try again later or check the configured AI provider.
+          {error || "The local scan is still valid. Try again later or check the configured AI provider."}
         </p>
       </div>
     );

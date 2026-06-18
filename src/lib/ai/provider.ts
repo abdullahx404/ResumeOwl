@@ -4,30 +4,49 @@ type AiProviderConfig = {
   apiKey: string;
 };
 
-function providerFromEnv(): AiProviderConfig | null {
-  const explicitProvider = process.env.AI_PROVIDER?.toLowerCase();
+export class AiProviderError extends Error {
+  constructor(
+    message: string,
+    public readonly code: "not-configured" | "timeout" | "provider-error" | "empty-response",
+    public readonly status?: number,
+  ) {
+    super(message);
+    this.name = "AiProviderError";
+  }
+}
 
-  if (process.env.GEMINI_API_KEY && (!explicitProvider || explicitProvider === "gemini")) {
+function envValue(name: string): string {
+  return process.env[name]?.trim() ?? "";
+}
+
+function providerFromEnv(): AiProviderConfig | null {
+  const explicitProvider = envValue("AI_PROVIDER").toLowerCase();
+  const geminiKey = envValue("GEMINI_API_KEY");
+  const groqKey = envValue("GROQ_API_KEY");
+  const openRouterKey = envValue("OPENROUTER_API_KEY");
+  const configuredModel = envValue("AI_MODEL");
+
+  if (geminiKey && (!explicitProvider || explicitProvider === "gemini")) {
     return {
       provider: "gemini",
-      model: process.env.AI_MODEL || "gemini-3.5-flash",
-      apiKey: process.env.GEMINI_API_KEY,
+      model: configuredModel || "gemini-2.5-flash-lite",
+      apiKey: geminiKey,
     };
   }
 
-  if (process.env.GROQ_API_KEY && (!explicitProvider || explicitProvider === "groq")) {
+  if (groqKey && (!explicitProvider || explicitProvider === "groq")) {
     return {
       provider: "groq",
-      model: process.env.AI_MODEL || "llama-3.1-8b-instant",
-      apiKey: process.env.GROQ_API_KEY,
+      model: configuredModel || "llama-3.1-8b-instant",
+      apiKey: groqKey,
     };
   }
 
-  if (process.env.OPENROUTER_API_KEY && (!explicitProvider || explicitProvider === "openrouter")) {
+  if (openRouterKey && (!explicitProvider || explicitProvider === "openrouter")) {
     return {
       provider: "openrouter",
-      model: process.env.AI_MODEL || "openai/gpt-oss-20b:free",
-      apiKey: process.env.OPENROUTER_API_KEY,
+      model: configuredModel || "openai/gpt-oss-20b:free",
+      apiKey: openRouterKey,
     };
   }
 
@@ -50,14 +69,25 @@ type ChatResponse = {
   }>;
 };
 
-async function callGemini(config: AiProviderConfig, prompt: string, signal?: AbortSignal): Promise<string> {
-  const models = [...new Set([config.model, "gemini-2.5-flash", "gemini-flash-latest"])];
+async function callGemini(
+  config: AiProviderConfig,
+  prompt: string,
+  signal?: AbortSignal,
+  preferFastModel = false,
+): Promise<string> {
+  const models = preferFastModel
+    ? [...new Set(["gemini-2.5-flash-lite", "gemini-2.5-flash", config.model])]
+    : [...new Set([config.model, "gemini-2.5-flash-lite", "gemini-2.5-flash"])];
   let lastError: Error | null = null;
 
   for (const model of models) {
     try {
       return await callGeminiModel({ ...config, model }, prompt, signal);
     } catch (error) {
+      if (error instanceof AiProviderError && error.code === "timeout") {
+        throw error;
+      }
+
       lastError = error instanceof Error ? error : new Error("AI provider request failed.");
     }
   }
@@ -90,14 +120,14 @@ async function callGeminiModel(config: AiProviderConfig, prompt: string, signal?
   );
 
   if (!response.ok) {
-    throw new Error("AI provider request failed.");
+    throw new AiProviderError("AI provider request failed.", "provider-error", response.status);
   }
 
   const data = (await response.json()) as GeminiResponse;
   const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("");
 
   if (!text) {
-    throw new Error("AI provider returned an empty response.");
+    throw new AiProviderError("AI provider returned an empty response.", "empty-response");
   }
 
   return text;
@@ -141,14 +171,14 @@ async function callChatProvider(config: AiProviderConfig, prompt: string, signal
   });
 
   if (!response.ok) {
-    throw new Error("AI provider request failed.");
+    throw new AiProviderError("AI provider request failed.", "provider-error", response.status);
   }
 
   const data = (await response.json()) as ChatResponse;
   const text = data.choices?.[0]?.message?.content;
 
   if (!text) {
-    throw new Error("AI provider returned an empty response.");
+    throw new AiProviderError("AI provider returned an empty response.", "empty-response");
   }
 
   return text;
@@ -158,11 +188,11 @@ export function hasAiProvider(): boolean {
   return providerFromEnv() !== null;
 }
 
-export async function generateAiText(prompt: string, options: { timeoutMs?: number } = {}): Promise<string> {
+export async function generateAiText(prompt: string, options: { timeoutMs?: number; preferFastModel?: boolean } = {}): Promise<string> {
   const config = providerFromEnv();
 
   if (!config) {
-    throw new Error("AI is not configured.");
+    throw new AiProviderError("AI is not configured.", "not-configured");
   }
 
   const controller = options.timeoutMs ? new AbortController() : null;
@@ -170,10 +200,20 @@ export async function generateAiText(prompt: string, options: { timeoutMs?: numb
 
   try {
     if (config.provider === "gemini") {
-      return await callGemini(config, prompt, controller?.signal);
+      return await callGemini(config, prompt, controller?.signal, options.preferFastModel);
     }
 
     return await callChatProvider(config, prompt, controller?.signal);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new AiProviderError("AI provider request timed out.", "timeout");
+    }
+
+    if (error instanceof TypeError) {
+      throw new AiProviderError("AI provider network request failed.", "provider-error");
+    }
+
+    throw error;
   } finally {
     if (timeout) {
       clearTimeout(timeout);

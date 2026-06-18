@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Eye, Loader2, Plus, RotateCcw, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { NotificationPill } from "@/components/ui/NotificationPill";
-import { generateLocalBullets, inferProjectName, inferTechStack, parseCommaList, textToBullets } from "@/lib/maker/bullets";
+import { generateLocalBullets, inferProjectName, inferTechStack, notesToBullets, parseCommaList, textToBullets } from "@/lib/maker/bullets";
 import { addUniqueValue, autoGroupSkills, commonCourses, commonSkills, filterOptions } from "@/lib/maker/options";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import { getStoredProfile } from "@/lib/resume/persistence";
@@ -145,6 +145,7 @@ export function MakerWorkspace() {
     emptyManualSkillGroup("Frontend"),
   ]);
   const [projectGeneratingIds, setProjectGeneratingIds] = useState<string[]>([]);
+  const [projectExtractingIds, setProjectExtractingIds] = useState<string[]>([]);
   const [experienceGeneratingIds, setExperienceGeneratingIds] = useState<string[]>([]);
   const [optionalConvertingIds, setOptionalConvertingIds] = useState<string[]>([]);
   const [education, setEducation] = useState<EducationEntry[]>([emptyEducation()]);
@@ -295,6 +296,25 @@ export function MakerWorkspace() {
     }
   }
 
+  function extractTechStackForProject(project: ProjectDraft) {
+    if (!project.notes.trim()) {
+      flash("Please provide a project description first.");
+      return;
+    }
+
+    setProjectExtractingIds((current) => addUniqueValue(current, project.id));
+    const techStack = inferTechStack(project.notes);
+    setProjects((current) =>
+      current.map((item) =>
+        item.id === project.id ? { ...item, techStack: techStack.join(", ") } : item,
+      ),
+    );
+    window.setTimeout(() => {
+      setProjectExtractingIds((current) => current.filter((id) => id !== project.id));
+    }, 200);
+    flash(techStack.length ? "Tech stack extracted." : "No clear tech stack found.");
+  }
+
   async function generateBulletsForExperience(item: ExperienceDraft) {
     if (!item.notes.trim()) {
       flash("Please provide an experience description first.");
@@ -387,17 +407,8 @@ export function MakerWorkspace() {
           linkLabel: project.linkLabel || project.name || "Project",
           techStack: parseCommaList(project.techStack).length
             ? parseCommaList(project.techStack)
-            : inferTechStack(project.notes),
-          bullets:
-            project.bullets.length > 0
-              ? project.bullets
-              : generateLocalBullets({
-                  name: project.name,
-                  notes: project.notes,
-                  techStack: parseCommaList(project.techStack),
-                  count: project.bulletCount,
-                  sectionType: "project",
-                }),
+            : [],
+          bullets: project.bullets.length > 0 ? project.bullets : notesToBullets(project.notes),
         })),
       experience: experience
         .filter((item) => item.role || item.company)
@@ -410,13 +421,7 @@ export function MakerWorkspace() {
           bullets:
             item.bullets.length > 0
               ? item.bullets
-              : generateLocalBullets({
-                  name: item.role,
-                  notes: item.notes,
-                  techStack: [],
-                  count: item.bulletCount,
-                  sectionType: "experience",
-                }),
+              : notesToBullets(item.notes),
         })),
       optionalSections: optionalSections
         .map((section) => ({
@@ -537,7 +542,15 @@ export function MakerWorkspace() {
           <Panel title="Projects">
             <div className="space-y-3">
               {projects.map((project) => (
-                <ProjectEditor key={project.id} project={project} setProjects={setProjects} isGenerating={projectGeneratingIds.includes(project.id)} onGenerate={() => generateBulletsForProject(project)} />
+                <ProjectEditor
+                  key={project.id}
+                  project={project}
+                  setProjects={setProjects}
+                  isExtracting={projectExtractingIds.includes(project.id)}
+                  isGenerating={projectGeneratingIds.includes(project.id)}
+                  onExtractTech={() => extractTechStackForProject(project)}
+                  onGenerate={() => generateBulletsForProject(project)}
+                />
               ))}
             </div>
             <AddButton label="Add Project" onClick={() => setProjects((current) => [...current, emptyProject()])} />
@@ -569,7 +582,8 @@ export function MakerWorkspace() {
           </Panel>
         </div>
 
-        <aside className="space-y-4 xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto">
+        <aside className="space-y-4">
+          <LiveResumePreview resume={liveResume} />
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
             <h2 className="text-lg font-semibold text-ink">Resume Overview</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -589,7 +603,6 @@ export function MakerWorkspace() {
               </button>
             </div>
           </div>
-          <LiveResumePreview resume={liveResume} />
         </aside>
       </div>
     </>
@@ -743,7 +756,21 @@ function ManualSkillGroups({
   );
 }
 
-function ProjectEditor({ project, setProjects, isGenerating, onGenerate }: { project: ProjectDraft; setProjects: React.Dispatch<React.SetStateAction<ProjectDraft[]>>; isGenerating: boolean; onGenerate: () => void }) {
+function ProjectEditor({
+  project,
+  setProjects,
+  isExtracting,
+  isGenerating,
+  onExtractTech,
+  onGenerate,
+}: {
+  project: ProjectDraft;
+  setProjects: React.Dispatch<React.SetStateAction<ProjectDraft[]>>;
+  isExtracting: boolean;
+  isGenerating: boolean;
+  onExtractTech: () => void;
+  onGenerate: () => void;
+}) {
   return (
     <div className="rounded-md border border-slate-200 p-3">
       <div className="grid gap-3 md:grid-cols-2">
@@ -754,7 +781,13 @@ function ProjectEditor({ project, setProjects, isGenerating, onGenerate }: { pro
         <label className="block text-sm font-medium text-slate-700">Bullet Count<select className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" value={project.bulletCount} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, bulletCount: Number(event.target.value) } : item))}>{[2, 3, 4, 5, 6].map((count) => <option key={count}>{count}</option>)}</select></label>
       </div>
       <textarea aria-label="Project details or description" className="mt-3 min-h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={project.notes} onChange={(event) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, notes: event.target.value } : item))} placeholder="Paste project details. ResumeOwl will infer name, tech stack, and bullets, then you can edit all of them." />
-      <EditorButtons isGenerating={isGenerating} onGenerate={onGenerate} onRemove={() => setProjects((current) => current.filter((item) => item.id !== project.id))} />
+      <EditorButtons
+        isExtracting={isExtracting}
+        isGenerating={isGenerating}
+        onExtractTech={onExtractTech}
+        onGenerate={onGenerate}
+        onRemove={() => setProjects((current) => current.filter((item) => item.id !== project.id))}
+      />
       <BulletEditor bullets={project.bullets} setBullets={(bullets) => setProjects((current) => current.map((item) => item.id === project.id ? { ...item, bullets } : item))} />
     </div>
   );
@@ -776,9 +809,27 @@ function ExperienceEditor({ item, setExperience, isGenerating, onGenerate }: { i
   );
 }
 
-function EditorButtons({ isGenerating, onGenerate, onRemove }: { isGenerating: boolean; onGenerate: () => void; onRemove: () => void }) {
+function EditorButtons({
+  isExtracting = false,
+  isGenerating,
+  onExtractTech,
+  onGenerate,
+  onRemove,
+}: {
+  isExtracting?: boolean;
+  isGenerating: boolean;
+  onExtractTech?: () => void;
+  onGenerate: () => void;
+  onRemove: () => void;
+}) {
   return (
     <div className="mt-3 flex flex-wrap gap-2">
+      {onExtractTech ? (
+        <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-75" onClick={onExtractTech} disabled={isExtracting || isGenerating}>
+          {isExtracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          {isExtracting ? "Extracting..." : "Extract Tech Stack"}
+        </button>
+      ) : null}
       <button type="button" className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md bg-owl-700 px-3 py-2 text-sm font-semibold text-white hover:bg-owl-900 disabled:cursor-wait disabled:opacity-75" onClick={onGenerate} disabled={isGenerating}>
         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
         {isGenerating ? "Generating..." : "Generate Bullets"}
@@ -885,7 +936,7 @@ function LiveResumePreview({ resume }: { resume: ResumeDocument }) {
                   <strong className="inline-flex flex-wrap items-baseline gap-1">
                     {project.name}
                     {project.link ? (
-                      <a className="text-owl-700 underline" href={project.link} target="_blank" rel="noreferrer">
+                      <a className="font-medium italic text-slate-500 underline" href={project.link} target="_blank" rel="noreferrer">
                         {project.linkLabel || "Link"}
                       </a>
                     ) : null}

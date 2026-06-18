@@ -26,7 +26,7 @@ export default function HomePage() {
   return (
     <main id="main-content" className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <header className="flex flex-col gap-4 border-b border-slate-200 pb-8 sm:flex-row sm:items-end sm:justify-between">
+        <header className="border-b border-slate-200 pb-8">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-owl-700">
               ResumeOwl
@@ -35,9 +35,6 @@ export default function HomePage() {
               Build, review, and export a focused resume in your browser.
             </h1>
           </div>
-          <p className="max-w-sm rounded-full border border-owl-100 bg-owl-50 px-4 py-2 text-sm font-medium text-owl-900">
-            No account required. Start from the tool you need.
-          </p>
         </header>
 
         <section className="grid gap-4 py-8 md:grid-cols-3">

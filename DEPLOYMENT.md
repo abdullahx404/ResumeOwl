@@ -9,7 +9,7 @@ Create `.env.local` locally:
 ```env
 GEMINI_API_KEY=your_key_here
 AI_PROVIDER=gemini
-AI_MODEL=gemini-3.5-flash
+AI_MODEL=gemini-2.5-flash-lite
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
@@ -54,7 +54,7 @@ Important: `.env.local` is only for your local machine. Vercel production will n
 ```env
 GEMINI_API_KEY=your_key_here
 AI_PROVIDER=gemini
-AI_MODEL=gemini-3.5-flash
+AI_MODEL=gemini-2.5-flash-lite
 NEXT_PUBLIC_APP_URL=https://your-vercel-domain.vercel.app
 ```
 
@@ -70,7 +70,7 @@ If AI works locally but not on Vercel, check these first:
 
 - `GEMINI_API_KEY` exists in Vercel Project Settings, not only `.env.local`.
 - `AI_PROVIDER` is set to `gemini`.
-- `AI_MODEL` is set to `gemini-3.5-flash`.
+- `AI_MODEL` is set to `gemini-2.5-flash-lite` for lower latency on Vercel functions.
 - The variables are enabled for the environment you are testing: Production or Preview.
 - You redeployed after saving the variables.
 
@@ -106,7 +106,7 @@ After deployment, test:
 - Refactor local fallback works.
 - Refactor AI refactor works.
 - Preview opens.
-- PDF print opens browser print dialog.
+- PDF print opens browser print dialog with only the resume content visible in the page body.
 - DOCX download creates a `.docx`.
 - LaTeX Code download creates a `.tex`.
 - Security headers are present.
