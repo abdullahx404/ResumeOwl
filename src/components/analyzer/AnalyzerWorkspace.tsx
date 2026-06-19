@@ -141,10 +141,7 @@ export function AnalyzerWorkspace() {
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-owl-700">
-                Phase 2
-              </p>
-              <h1 className="mt-1 text-2xl font-semibold text-ink">
+              <h1 className="text-2xl font-semibold text-ink">
                 Local ATS scan
               </h1>
               <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -303,6 +300,21 @@ function AnalysisResults({
         </div>
       </div>
 
+      <ResultBlock title="Score breakdown">
+        <div className="grid gap-2 text-sm sm:grid-cols-5">
+          <Metric label="Keywords" value={`${result.scoreBreakdown.keywordCoverage}/35`} />
+          <Metric label="Required" value={`${result.scoreBreakdown.requiredSkills}/25`} />
+          <Metric label="Sections" value={`${result.scoreBreakdown.sections}/15`} />
+          <Metric label="Contact" value={`${result.scoreBreakdown.contact}/15`} />
+          <Metric label="Bullets" value={`${result.scoreBreakdown.bulletQuality}/10`} />
+        </div>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          The local score is calculated from skill keyword coverage, required skill matches,
+          common ATS sections, contact details, and bullet quality. Generic filler words from the
+          job post are ignored so the score focuses on real skills, tools, courses, and qualifications.
+        </p>
+      </ResultBlock>
+
       <ResultBlock title="Missing keywords">
         <PillList
           items={result.missingKeywords.slice(0, 18)}
@@ -343,21 +355,6 @@ function AnalysisResults({
         </div>
       </ResultBlock>
 
-      <ResultBlock title="Score breakdown">
-        <div className="grid gap-2 text-sm sm:grid-cols-5">
-          <Metric label="Keywords /35" value={result.scoreBreakdown.keywordCoverage} />
-          <Metric label="Required /25" value={result.scoreBreakdown.requiredSkills} />
-          <Metric label="Sections /15" value={result.scoreBreakdown.sections} />
-          <Metric label="Contact /15" value={result.scoreBreakdown.contact} />
-          <Metric label="Bullets /10" value={result.scoreBreakdown.bulletQuality} />
-        </div>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          The local score is calculated from skill keyword coverage, required skill matches,
-          common ATS sections, contact details, and bullet quality. Generic filler words from the
-          job post are ignored so the score focuses on real skills, tools, courses, and qualifications.
-        </p>
-      </ResultBlock>
-
       <ResultBlock title="Weak bullet points">
         {result.weakBullets.length ? (
           <div className="space-y-3">
@@ -394,7 +391,7 @@ function AnalysisResults({
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-md bg-slate-50 px-4 py-3">
       <p className="text-lg font-semibold text-ink">{value}</p>

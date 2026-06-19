@@ -1,15 +1,16 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Copy, Download, FileDown, Printer, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Download, Edit3, FileDown, Printer, RotateCcw, Save, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { downloadBlob, downloadTextFile, safeFileName } from "@/lib/export/filenames";
 import { normalizeExternalUrl } from "@/lib/maker/bullets";
+import { formatAcademicScore, sanitizeAcademicScoreInput } from "@/lib/resume/academic-score";
 import { resumeContactItems } from "@/lib/resume/contact";
 import { createLatexStyleSource } from "@/lib/resume/source";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/stores/resume-store";
-import type { ResumeDocument, ResumeSectionId } from "@/types/resume";
+import type { EducationEntry, ExperienceEntry, OptionalSection, ProjectEntry, ResumeDocument, ResumeSectionId, SkillGroup } from "@/types/resume";
 
 const sectionLabels: Record<ResumeSectionId, string> = {
   education: "Education",
@@ -66,7 +67,8 @@ function SectionControls({
 
 export function ResumePreview() {
   const [copyStatus, setCopyStatus] = useState("");
-  const { resume, updatePersonal, updateSummary, setSectionOrder, reset } =
+  const [isEditingSections, setIsEditingSections] = useState(false);
+  const { resume, setResume, updatePersonal, updateSummary, setSectionOrder, reset } =
     useResumeStore();
 
   const source = useMemo(() => createLatexStyleSource(resume), [resume]);
@@ -130,10 +132,7 @@ export function ResumePreview() {
       <aside className="no-print h-fit rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
         <div className="space-y-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-owl-700">
-              Phase 1 Preview
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold text-ink">
+            <h1 className="text-2xl font-semibold text-ink">
               Resume editor
             </h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -160,13 +159,27 @@ export function ResumePreview() {
           </label>
 
           <label className="block text-sm font-medium text-slate-700">
-            Summary
+            Summary <span className="font-normal text-slate-400">(optional)</span>
             <textarea
               className="mt-1 min-h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-owl-600 focus:ring-2 focus:ring-owl-100"
               value={resume.summary ?? ""}
               onChange={(event) => updateSummary(event.target.value)}
             />
           </label>
+
+          <button
+            type="button"
+            className={cn(
+              "inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition",
+              isEditingSections
+                ? "bg-owl-700 text-white hover:bg-owl-900"
+                : "border border-slate-300 text-slate-700 hover:bg-slate-50",
+            )}
+            onClick={() => setIsEditingSections((current) => !current)}
+          >
+            {isEditingSections ? <Save className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
+            {isEditingSections ? "Done Editing Sections" : "Edit Stored Sections"}
+          </button>
 
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -293,7 +306,7 @@ export function ResumePreview() {
               {sectionId === "optional" ? null : (
                 <h2 className="resume-heading">{sectionLabels[sectionId]}</h2>
               )}
-              <ResumeSection sectionId={sectionId} />
+              <ResumeSection sectionId={sectionId} editing={isEditingSections} resume={resume} setResume={setResume} />
             </section>
           ))}
         </div>
@@ -322,14 +335,54 @@ function sectionHasContent(sectionId: ResumeSectionId, resume: ResumeDocument) {
   return resume.optionalSections.some((section) => section.items.some((item) => item.trim()));
 }
 
-function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
-  const resume = useResumeStore((state) => state.resume);
+function ResumeSection({
+  sectionId,
+  editing,
+  resume,
+  setResume,
+}: {
+  sectionId: ResumeSectionId;
+  editing: boolean;
+  resume: ResumeDocument;
+  setResume: (resume: ResumeDocument) => void;
+}) {
+  function updateEducation(id: string, patch: Partial<EducationEntry>) {
+    setResume({ ...resume, education: resume.education.map((item) => (item.id === id ? { ...item, ...patch } : item)) });
+  }
+
+  function updateSkillGroup(id: string, patch: Partial<SkillGroup>) {
+    setResume({ ...resume, skillGroups: resume.skillGroups.map((item) => (item.id === id ? { ...item, ...patch } : item)) });
+  }
+
+  function updateProject(id: string, patch: Partial<ProjectEntry>) {
+    setResume({ ...resume, projects: resume.projects.map((item) => (item.id === id ? { ...item, ...patch } : item)) });
+  }
+
+  function updateExperience(id: string, patch: Partial<ExperienceEntry>) {
+    setResume({ ...resume, experience: resume.experience.map((item) => (item.id === id ? { ...item, ...patch } : item)) });
+  }
+
+  function updateOptionalSection(id: string, patch: Partial<OptionalSection>) {
+    setResume({ ...resume, optionalSections: resume.optionalSections.map((item) => (item.id === id ? { ...item, ...patch } : item)) });
+  }
 
   if (sectionId === "education") {
     return (
       <div className="mt-2 space-y-3">
         {resume.education.map((item) => (
           <div key={item.id}>
+            {editing ? (
+              <EditGrid>
+                <EditInput label="Institute" value={item.institute} onChange={(value) => updateEducation(item.id, { institute: value })} />
+                <EditInput label="Degree/Program" value={item.degree} onChange={(value) => updateEducation(item.id, { degree: value })} />
+                <EditInput type="month" label="Intake Month/Year" value={item.startDate ?? ""} onChange={(value) => updateEducation(item.id, { startDate: value })} />
+                <EditInput type="month" label="Graduation Month/Year" value={item.endDate ?? ""} onChange={(value) => updateEducation(item.id, { endDate: value })} />
+                <EditInput label="CGPA/Percentage" value={item.cgpa ?? ""} onChange={(value) => {
+                  const next = sanitizeAcademicScoreInput(value);
+                  updateEducation(item.id, { cgpa: next || (value ? item.cgpa : "") });
+                }} />
+              </EditGrid>
+            ) : null}
             <div className="flex flex-wrap justify-between gap-2 text-sm">
               <strong>{item.institute}</strong>
               <span className="text-slate-600">
@@ -338,15 +391,19 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
             </div>
             <p className="text-sm text-slate-700">
               {item.degree}
-              {item.cgpa ? `, CGPA ${item.cgpa}` : ""}
+              {item.cgpa ? `, ${formatAcademicScore(item.cgpa)}` : ""}
             </p>
             {item.details?.length ? <BulletList items={item.details} /> : null}
           </div>
         ))}
         {resume.courses.length ? (
-          <p className="text-sm text-slate-700">
-            <strong>Relevant Courses:</strong> {resume.courses.join(", ")}
-          </p>
+          editing ? (
+            <EditTextarea label="Relevant Courses" value={resume.courses.join(", ")} onChange={(value) => setResume({ ...resume, courses: splitEditableList(value) })} />
+          ) : (
+            <p className="text-sm text-slate-700">
+              <strong>Relevant Courses:</strong> {resume.courses.join(", ")}
+            </p>
+          )
         ) : null}
       </div>
     );
@@ -356,9 +413,16 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
     return (
       <div className="mt-2 space-y-1 text-sm">
         {resume.skillGroups.map((group) => (
-          <p key={group.id}>
-            <strong>{group.name}:</strong> {group.skills.join(", ")}
-          </p>
+          editing ? (
+            <div key={group.id} className="rounded-md border border-slate-200 p-2">
+              <EditInput label="Group" value={group.name} onChange={(value) => updateSkillGroup(group.id, { name: value })} />
+              <EditTextarea label="Skills" value={group.skills.join(", ")} onChange={(value) => updateSkillGroup(group.id, { skills: splitEditableList(value) })} />
+            </div>
+          ) : (
+            <p key={group.id}>
+              <strong>{group.name}:</strong> {group.skills.join(", ")}
+            </p>
+          )
         ))}
       </div>
     );
@@ -369,6 +433,15 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
       <div className="mt-2 space-y-3">
         {resume.projects.map((project) => (
           <div key={project.id}>
+            {editing ? (
+              <EditGrid>
+                <EditInput label="Project Name" value={project.name} onChange={(value) => updateProject(project.id, { name: value })} />
+                <EditInput label="Link Name" value={project.linkLabel ?? ""} onChange={(value) => updateProject(project.id, { linkLabel: value })} />
+                <EditInput label="Link Address" value={project.link ?? ""} onChange={(value) => updateProject(project.id, { link: value })} />
+                <EditInput label="Tech Stack" value={project.techStack?.join(", ") ?? ""} onChange={(value) => updateProject(project.id, { techStack: splitEditableList(value) })} />
+                <EditTextarea label="Bullets" value={project.bullets.join("\n")} onChange={(value) => updateProject(project.id, { bullets: splitEditableLines(value) })} />
+              </EditGrid>
+            ) : null}
             <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
               <strong className="inline-flex flex-wrap items-baseline gap-1">
                 {project.name}
@@ -397,6 +470,15 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
       <div className="mt-2 space-y-3">
         {resume.experience.map((item) => (
           <div key={item.id}>
+            {editing ? (
+              <EditGrid>
+                <EditInput label="Role" value={item.role} onChange={(value) => updateExperience(item.id, { role: value })} />
+                <EditInput label="Company" value={item.company} onChange={(value) => updateExperience(item.id, { company: value })} />
+                <EditInput type="month" label="Start Month/Year" value={item.startDate ?? ""} onChange={(value) => updateExperience(item.id, { startDate: value })} />
+                <EditInput type="month" label="End Month/Year" value={item.endDate ?? ""} onChange={(value) => updateExperience(item.id, { endDate: value })} />
+                <EditTextarea label="Bullets" value={item.bullets.join("\n")} onChange={(value) => updateExperience(item.id, { bullets: splitEditableLines(value) })} />
+              </EditGrid>
+            ) : null}
             <div className="flex flex-wrap justify-between gap-2 text-sm">
               <strong>
                 {item.role}, {item.company}
@@ -416,11 +498,56 @@ function ResumeSection({ sectionId }: { sectionId: ResumeSectionId }) {
     <div className="mt-2 space-y-3">
       {resume.optionalSections.map((section) => (
         <div key={section.id} className="pt-1">
+          {editing ? (
+            <div className="mb-2 rounded-md border border-slate-200 p-2">
+              <EditInput label="Section Title" value={section.title} onChange={(value) => updateOptionalSection(section.id, { title: value })} />
+              <EditTextarea label="Bullets" value={section.items.join("\n")} onChange={(value) => updateOptionalSection(section.id, { items: splitEditableLines(value) })} />
+            </div>
+          ) : null}
           <h2 className="resume-heading">{section.title}</h2>
           <BulletList items={section.items} />
         </div>
       ))}
     </div>
+  );
+}
+
+function splitEditableList(value: string) {
+  return value.split(/[,;\n]/).map((item) => item.trim()).filter(Boolean);
+}
+
+function splitEditableLines(value: string) {
+  return value.split("\n").map((item) => item.replace(/^[-*•]\s*/, "").trim()).filter(Boolean);
+}
+
+function EditGrid({ children }: { children: React.ReactNode }) {
+  return <div className="no-print mb-3 grid gap-2 rounded-md border border-owl-100 bg-owl-50/40 p-2 md:grid-cols-2">{children}</div>;
+}
+
+function EditInput({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
+  return (
+    <label className="block text-xs font-semibold text-slate-600">
+      {label}
+      <input
+        type={type}
+        className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800 outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  );
+}
+
+function EditTextarea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="block text-xs font-semibold text-slate-600 md:col-span-2">
+      {label}
+      <textarea
+        className="mt-1 min-h-20 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800 outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
   );
 }
 

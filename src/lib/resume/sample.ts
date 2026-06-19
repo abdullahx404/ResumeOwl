@@ -20,7 +20,7 @@ export const sampleResume: ResumeDocument = {
       degree: "BS Software Engineering",
       startDate: "2022",
       endDate: "2026",
-      cgpa: "3.72/4.00",
+      cgpa: "3.72",
       details: ["Relevant coursework: Data Structures, Databases, Web Engineering"],
     },
   ],

@@ -1,5 +1,6 @@
 import type { ResumeDocument } from "@/types/resume";
 import { normalizeExternalUrl } from "@/lib/maker/bullets";
+import { formatAcademicScore } from "./academic-score";
 import { resumeContactItems } from "./contact";
 import { formatResumeDateRange } from "./dates";
 
@@ -61,7 +62,7 @@ export function createLatexStyleSource(resume: ResumeDocument): string {
           `\\textbf{${escapeLatex(education.institute)}} \\hfill ${escapeLatex(
             formatResumeDateRange(education.startDate, education.endDate).replace(" - ", " -- "),
           )}`,
-          `${escapeLatex(education.degree)}${education.cgpa ? `, CGPA ${escapeLatex(education.cgpa)}` : ""}`,
+          `${escapeLatex(education.degree)}${education.cgpa ? `, ${escapeLatex(formatAcademicScore(education.cgpa))}` : ""}`,
         );
         if (education.details?.length) {
           lines.push("\\begin{itemize}", bullets(education.details), "\\end{itemize}");

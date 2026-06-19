@@ -7,6 +7,7 @@ import {
   TextRun,
 } from "docx";
 import { normalizeExternalUrl } from "@/lib/maker/bullets";
+import { formatAcademicScore } from "@/lib/resume/academic-score";
 import { resumeContactItems } from "@/lib/resume/contact";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import type { ResumeDocument, ResumeSectionId } from "@/types/resume";
@@ -107,7 +108,7 @@ export function buildDocxDocument(resume: ResumeDocument): Document {
               }),
             ],
           }),
-          new Paragraph(`${item.degree}${item.cgpa ? `, CGPA ${item.cgpa}` : ""}`),
+          new Paragraph(`${item.degree}${item.cgpa ? `, ${formatAcademicScore(item.cgpa)}` : ""}`),
         );
         item.details?.forEach((detail) => children.push(bullet(detail)));
       }

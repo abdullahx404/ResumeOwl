@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NotificationPill } from "@/components/ui/NotificationPill";
 import { extractPlainSummary, inferTechStack, normalizeExternalUrl, notesToBullets, parseCommaList, polishSummaryLocally, textToBullets } from "@/lib/maker/bullets";
 import { addUniqueValue, autoGroupSkills, commonCourses, commonSkills, filterOptions } from "@/lib/maker/options";
+import { formatAcademicScore, sanitizeAcademicScoreInput } from "@/lib/resume/academic-score";
 import { resumeContactItems } from "@/lib/resume/contact";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import { getStoredProfile } from "@/lib/resume/persistence";
@@ -416,21 +417,17 @@ export function MakerWorkspace() {
       return;
     }
 
-    const payload = {
-      name: section.title || "Optional Section",
-      notes: currentItems.join("\n"),
-      techStack: [],
-      count: Math.max(3, Math.min(6, currentItems.length)),
-      sectionType: "experience" as const,
-    };
-
     setOptionalPolishingIds((current) => addUniqueValue(current, section.id));
 
     try {
-      const response = await fetch("/api/ai/generate-bullets", {
+      const response = await fetch("/api/ai/polish-optional", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          title: section.title || "Optional Section",
+          text: currentItems.join("\n"),
+          count: Math.max(3, Math.min(6, currentItems.length)),
+        }),
       });
       const data = (await response.json()) as { bullets?: string[]; configured?: boolean; error?: string };
 
@@ -556,7 +553,7 @@ export function MakerWorkspace() {
                 ))}
             </div>
             <AutoGrowTextarea
-              label="Summary"
+              label={<TitleWithHint title="Summary" hint="optional" />}
               value={personal.summary}
               onChange={(value) => setPersonal((current) => ({ ...current, summary: value }))}
             />
@@ -579,7 +576,10 @@ export function MakerWorkspace() {
                   <TextField label="Degree/Program" value={item.degree} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, degree: value } : entry))} />
                   <TextField type="month" label="Intake Month/Year" value={item.startDate ?? ""} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, startDate: value } : entry))} />
                   <TextField type="month" label="Graduation Month/Year" value={item.endDate ?? ""} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, endDate: value } : entry))} />
-                  <TextField label="CGPA" value={item.cgpa ?? ""} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, cgpa: value } : entry))} />
+                  <TextField label="CGPA/Percentage" value={item.cgpa ?? ""} onChange={(value) => {
+                    const next = sanitizeAcademicScoreInput(value);
+                    setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, cgpa: next || (value ? entry.cgpa : "") } : entry));
+                  }} />
                   <button type="button" className="self-end rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setEducation((current) => current.filter((entry) => entry.id !== item.id))}>
                     Remove
                   </button>
@@ -691,8 +691,7 @@ export function MakerWorkspace() {
 function Header() {
   return (
     <header className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
-      <p className="text-sm font-semibold uppercase tracking-wide text-owl-700">Phase 4</p>
-      <h1 className="mt-1 text-3xl font-semibold text-ink">Resume Maker</h1>
+      <h1 className="text-3xl font-semibold text-ink">Resume Maker</h1>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
         Build a resume from structured inputs, generate editable bullets from your own notes, and send the result to the LaTeX-style preview.
       </p>
@@ -718,7 +717,7 @@ function TextField({ label, value, onChange, type = "text" }: { label: React.Rea
   );
 }
 
-function AutoGrowTextarea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function AutoGrowTextarea({ label, value, onChange }: { label: React.ReactNode; value: string; onChange: (value: string) => void }) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -1037,7 +1036,7 @@ function buildPreviewSections(resume: ResumeDocument): PreviewSectionItem[] {
               </div>
               <p className="text-sm text-slate-700">
                 {item.degree}
-                {item.cgpa ? `, CGPA ${item.cgpa}` : ""}
+                {item.cgpa ? `, ${formatAcademicScore(item.cgpa)}` : ""}
               </p>
             </div>
           ))}

@@ -128,8 +128,7 @@ export function RefactorWorkspace() {
       <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-owl-700">Phase 5</p>
-            <h1 className="mt-1 text-2xl font-semibold text-ink">Resume Refactor</h1>
+            <h1 className="text-2xl font-semibold text-ink">Resume Refactor</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               Rewrite a resume for a job description without adding unsupported experience or fake skills.
             </p>

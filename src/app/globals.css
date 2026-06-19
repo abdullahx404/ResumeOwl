@@ -70,6 +70,21 @@ textarea {
     margin: 0;
   }
 
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    filter: none !important;
+    text-shadow: none !important;
+    transform: none !important;
+  }
+
+  html,
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
   .no-print {
     display: none !important;
   }
@@ -85,6 +100,11 @@ textarea {
     width: 100% !important;
     max-width: none !important;
     min-height: 0 !important;
+  }
+
+  .resume-page a {
+    color: inherit !important;
+    text-decoration: underline;
   }
 
   .resume-heading {
