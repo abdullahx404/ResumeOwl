@@ -7,6 +7,7 @@ import {
   TextRun,
 } from "docx";
 import { normalizeExternalUrl } from "@/lib/maker/bullets";
+import { resumeContactItems } from "@/lib/resume/contact";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import type { ResumeDocument, ResumeSectionId } from "@/types/resume";
 
@@ -31,6 +32,27 @@ function bullet(text: string) {
     children: inlineTextRuns(text),
     bullet: { level: 0 },
     spacing: { after: 60 },
+  });
+}
+
+function contactRuns(resume: ResumeDocument) {
+  return resumeContactItems(resume.personal).flatMap((item, index) => {
+    const separator = index > 0 ? [new TextRun(" | ")] : [];
+    const content = item.href
+      ? [
+          new ExternalHyperlink({
+            link: item.href,
+            children: [
+              new TextRun({
+                text: item.label,
+                style: "Hyperlink",
+              }),
+            ],
+          }),
+        ]
+      : [new TextRun(item.label)];
+
+    return [...separator, ...content];
   });
 }
 
@@ -64,16 +86,7 @@ export function buildDocxDocument(resume: ResumeDocument): Document {
     }),
     new Paragraph({
       alignment: "center",
-      text: [
-        resume.personal.email,
-        resume.personal.phone,
-        resume.personal.location,
-        resume.personal.github,
-        resume.personal.linkedin,
-        resume.personal.portfolio,
-      ]
-        .filter(Boolean)
-        .join(" | "),
+      children: contactRuns(resume),
     }),
   ];
 

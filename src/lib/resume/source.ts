@@ -1,5 +1,6 @@
 import type { ResumeDocument } from "@/types/resume";
 import { normalizeExternalUrl } from "@/lib/maker/bullets";
+import { resumeContactItems } from "./contact";
 import { formatResumeDateRange } from "./dates";
 
 function escapeLatex(value: string): string {
@@ -34,20 +35,17 @@ function escapeLatexWithBold(value: string): string {
 }
 
 export function createLatexStyleSource(resume: ResumeDocument): string {
+  const contactLine = resumeContactItems(resume.personal)
+    .map((item) =>
+      item.href
+        ? `\\href{${escapeLatexUrl(item.href)}}{${escapeLatex(item.label)}}`
+        : escapeLatex(item.label),
+    )
+    .join(" $\\cdot$ ");
   const lines = [
     `\\textbf{\\Large ${escapeLatex(resume.personal.fullName)}}`,
     resume.personal.title ? escapeLatex(resume.personal.title) : "",
-    [
-      resume.personal.email,
-      resume.personal.phone,
-      resume.personal.location,
-      resume.personal.github,
-      resume.personal.linkedin,
-      resume.personal.portfolio,
-    ]
-      .filter(Boolean)
-      .map((item) => escapeLatex(item ?? ""))
-      .join(" $\\cdot$ "),
+    contactLine,
     "",
   ];
 

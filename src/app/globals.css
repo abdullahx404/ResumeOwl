@@ -55,6 +55,10 @@ textarea {
   text-transform: uppercase;
 }
 
+.print-only {
+  display: none;
+}
+
 @media print {
   @page {
     margin: 0;
@@ -68,6 +72,10 @@ textarea {
 
   .no-print {
     display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
   }
 
   .resume-page {

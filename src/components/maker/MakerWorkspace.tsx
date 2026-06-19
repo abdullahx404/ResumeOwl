@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NotificationPill } from "@/components/ui/NotificationPill";
 import { extractPlainSummary, inferTechStack, normalizeExternalUrl, notesToBullets, parseCommaList, polishSummaryLocally, textToBullets } from "@/lib/maker/bullets";
 import { addUniqueValue, autoGroupSkills, commonCourses, commonSkills, filterOptions } from "@/lib/maker/options";
+import { resumeContactItems } from "@/lib/resume/contact";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import { getStoredProfile } from "@/lib/resume/persistence";
 import { useResumeStore } from "@/stores/resume-store";
@@ -649,6 +650,9 @@ export function MakerWorkspace() {
                       {optionalPolishingIds.includes(section.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                       {optionalPolishingIds.includes(section.id) ? "Polishing..." : "Polish Bullets"}
                     </button>
+                    <button type="button" className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setOptionalSections((current) => current.filter((item) => item.id !== section.id))}>
+                      Remove Section
+                    </button>
                   </div>
                 </div>
               ))}
@@ -963,82 +967,57 @@ function TitleWithHint({ title, hint }: { title: string; hint: string }) {
 }
 
 function LiveResumePreview({ resume }: { resume: ResumeDocument }) {
-  const pages = paginatePreviewSections(resume);
+  const sections = buildPreviewSections(resume);
 
   return (
-    <div className="space-y-4 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-scroll xl:pr-2">
-      {pages.map((page, index) => (
-        <article key={page.key} className="min-h-[760px] rounded-lg border border-slate-200 bg-white px-5 py-6 shadow-soft sm:px-7">
-          {index === 0 ? <PreviewHeader resume={resume} /> : null}
-          {page.sections.map((section) => (
-            <PreviewSection key={section.key} title={section.title}>
-              {section.content}
-            </PreviewSection>
-          ))}
-        </article>
+    <article className="resume-page min-h-[1000px] rounded-lg border border-slate-200 bg-white px-8 py-10 shadow-soft sm:px-12 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-scroll">
+      <PreviewHeader resume={resume} />
+      {sections.map((section) => (
+        <PreviewSection key={section.key} title={section.title}>
+          {section.content}
+        </PreviewSection>
       ))}
-    </div>
+    </article>
   );
 }
 
-type PreviewPage = {
-  key: string;
-  sections: Array<{ key: string; title: string; content: React.ReactNode; weight: number }>;
-};
+type PreviewSectionItem = { key: string; title: string; content: React.ReactNode };
 
 function PreviewHeader({ resume }: { resume: ResumeDocument }) {
   return (
-    <header className="pb-3 text-center">
-      <h2 className="text-xl font-bold uppercase tracking-normal text-ink">
+    <header className="pb-4 text-center">
+      <h2 className="text-3xl font-bold uppercase tracking-normal text-ink">
         {resume.personal.fullName || "Your Name"}
       </h2>
       {resume.personal.title ? (
-        <p className="mt-1 text-xs font-medium text-slate-700">{resume.personal.title}</p>
+        <p className="mt-1 text-sm font-medium text-slate-700">{resume.personal.title}</p>
       ) : null}
-      <p className="mt-2 break-words text-[11px] text-slate-600">
-        {[
-          resume.personal.email,
-          resume.personal.phone,
-          resume.personal.location,
-          resume.personal.github,
-          resume.personal.linkedin,
-          resume.personal.portfolio,
-        ]
-          .filter(Boolean)
-          .join(" | ")}
+      <p className="mt-2 break-words text-xs text-slate-600">
+        {resumeContactItems(resume.personal).map((item, index) => (
+          <span key={item.key}>
+            {index > 0 ? " | " : ""}
+            {item.href ? (
+              <a className="underline-offset-2 hover:underline" href={item.href} target="_blank" rel="noreferrer">
+                {item.label}
+              </a>
+            ) : (
+              item.label
+            )}
+          </span>
+        ))}
       </p>
     </header>
   );
 }
 
-function paginatePreviewSections(resume: ResumeDocument): PreviewPage[] {
-  const sections = buildPreviewSections(resume);
-  const pages: PreviewPage[] = [{ key: "preview-page-1", sections: [] }];
-  let currentWeight = 5;
-  const maxWeight = 40;
-
-  for (const section of sections) {
-    if (pages.at(-1)?.sections.length && currentWeight + section.weight > maxWeight) {
-      pages.push({ key: `preview-page-${pages.length + 1}`, sections: [] });
-      currentWeight = 0;
-    }
-
-    pages[pages.length - 1].sections.push(section);
-    currentWeight += section.weight;
-  }
-
-  return pages.length ? pages : [{ key: "preview-page-1", sections: [] }];
-}
-
-function buildPreviewSections(resume: ResumeDocument): PreviewPage["sections"] {
-  const sections: PreviewPage["sections"] = [];
+function buildPreviewSections(resume: ResumeDocument): PreviewSectionItem[] {
+  const sections: PreviewSectionItem[] = [];
 
   if (resume.summary?.trim()) {
     sections.push({
       key: "summary",
       title: "Summary",
-      weight: 3 + Math.ceil(resume.summary.length / 140),
-      content: <p className="text-xs leading-5 text-slate-800">{resume.summary}</p>,
+      content: <p className="text-sm leading-6 text-slate-800">{resume.summary}</p>,
     });
   }
 
@@ -1046,25 +1025,24 @@ function buildPreviewSections(resume: ResumeDocument): PreviewPage["sections"] {
     sections.push({
       key: "education",
       title: "Education",
-      weight: 3 + resume.education.length * 3 + Math.ceil(resume.courses.join(", ").length / 120),
       content: (
         <div className="space-y-2">
           {resume.education.map((item) => (
             <div key={item.id}>
-              <div className="flex flex-wrap justify-between gap-2 text-xs">
+              <div className="flex flex-wrap justify-between gap-2 text-sm">
                 <strong>{item.institute}</strong>
                 <span className="text-slate-600">
                   {formatResumeDateRange(item.startDate, item.endDate)}
                 </span>
               </div>
-              <p className="text-xs text-slate-700">
+              <p className="text-sm text-slate-700">
                 {item.degree}
                 {item.cgpa ? `, CGPA ${item.cgpa}` : ""}
               </p>
             </div>
           ))}
           {resume.courses.length ? (
-            <p className="text-xs text-slate-700">
+            <p className="text-sm text-slate-700">
               <strong>Relevant Courses:</strong> {resume.courses.join(", ")}
             </p>
           ) : null}
@@ -1077,9 +1055,8 @@ function buildPreviewSections(resume: ResumeDocument): PreviewPage["sections"] {
     sections.push({
       key: "skills",
       title: "Skills",
-      weight: 2 + resume.skillGroups.length,
       content: (
-        <div className="space-y-1 text-xs">
+        <div className="space-y-1 text-sm">
           {resume.skillGroups.map((group) => (
             <p key={group.id}>
               <strong>{group.name}:</strong> {group.skills.join(", ")}
@@ -1094,12 +1071,11 @@ function buildPreviewSections(resume: ResumeDocument): PreviewPage["sections"] {
     sections.push({
       key: "projects",
       title: "Projects",
-      weight: 3 + resume.projects.reduce((total, project) => total + 2 + project.bullets.length * 2, 0),
       content: (
         <div className="space-y-2">
           {resume.projects.map((project) => (
             <div key={project.id}>
-              <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
                 <strong className="inline-flex flex-wrap items-baseline gap-1">
                   {project.name}
                   {project.link ? (
@@ -1108,7 +1084,7 @@ function buildPreviewSections(resume: ResumeDocument): PreviewPage["sections"] {
                     </a>
                   ) : null}
                 </strong>
-                <span className="text-[11px] text-slate-600">{project.techStack?.join(", ")}</span>
+                <span className="text-xs text-slate-600">{project.techStack?.join(", ")}</span>
               </div>
               <PreviewBullets items={project.bullets} />
             </div>
@@ -1122,12 +1098,11 @@ function buildPreviewSections(resume: ResumeDocument): PreviewPage["sections"] {
     sections.push({
       key: "experience",
       title: "Experience",
-      weight: 3 + resume.experience.reduce((total, item) => total + 2 + item.bullets.length * 2, 0),
       content: (
         <div className="space-y-2">
           {resume.experience.map((item) => (
             <div key={item.id}>
-              <div className="flex flex-wrap justify-between gap-2 text-xs">
+              <div className="flex flex-wrap justify-between gap-2 text-sm">
                 <strong>{[item.role, item.company].filter(Boolean).join(", ")}</strong>
                 <span className="text-slate-600">
                   {formatResumeDateRange(item.startDate, item.endDate)}
@@ -1145,7 +1120,6 @@ function buildPreviewSections(resume: ResumeDocument): PreviewPage["sections"] {
     sections.push({
       key: section.id,
       title: section.title,
-      weight: 3 + section.items.length * 2,
       content: <PreviewBullets items={section.items} />,
     });
   });
@@ -1156,7 +1130,7 @@ function buildPreviewSections(resume: ResumeDocument): PreviewPage["sections"] {
 function PreviewSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-4">
-      <h3 className="border-b border-slate-300 pb-1 text-xs font-bold uppercase tracking-normal text-ink">
+      <h3 className="resume-heading">
         {title}
       </h3>
       <div className="mt-2">{children}</div>
@@ -1166,7 +1140,7 @@ function PreviewSection({ title, children }: { title: string; children: React.Re
 
 function PreviewBullets({ items }: { items: string[] }) {
   return (
-    <ul className="mt-1 list-disc space-y-1 pl-4 text-xs leading-5 text-slate-800">
+    <ul className="mt-1 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-800">
       {items.map((item) => (
         <li key={item} className="break-words">
           <InlineStrong text={item} />

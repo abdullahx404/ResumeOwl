@@ -6,9 +6,10 @@ import {
 } from "@/lib/validation/maker";
 
 export const runtime = "nodejs";
-export const maxDuration = 10;
+export const maxDuration = 15;
 
-const bulletGenerationTimeoutMs = 7000;
+const bulletGenerationTimeoutMs = 12000;
+const bulletMarkerPattern = /^(?:[-*]|\u2022|\u2023|\u25E6|\d+[.)])\s+/;
 
 function buildPrompt(input: ReturnType<typeof bulletGenerationRequestSchema.parse>) {
   return `
@@ -48,13 +49,16 @@ function parseResumeEntry(raw: string, count: number) {
     .split("\n")
     .map(cleanupLine)
     .filter(Boolean);
-  const title = lines.find((line) => !/^([-*•]|\d+[.)])\s+/.test(line));
+  const title = lines.find((line) => !bulletMarkerPattern.test(line));
   const bulletLines = lines
-    .filter((line) => /^([-*•]|\d+[.)])\s+/.test(line))
-    .map((line) => line.replace(/^([-*•]|\d+[.)])\s+/, "").trim())
+    .filter((line) => bulletMarkerPattern.test(line))
+    .map((line) => line.replace(bulletMarkerPattern, "").trim())
     .filter(Boolean);
   const fallbackBullets = lines.slice(title ? lines.indexOf(title) + 1 : 1).filter((line) => line !== title);
-  const bullets = (bulletLines.length ? bulletLines : fallbackBullets).slice(0, count);
+  const bullets = (bulletLines.length ? bulletLines : fallbackBullets)
+    .map((bullet) => bullet.replace(/^["']|["']$/g, "").trim())
+    .filter(Boolean)
+    .slice(0, count);
 
   return bulletGenerationResponseSchema.parse({
     suggestedName: title,

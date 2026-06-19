@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, Copy, Download, FileDown, Printer, RotateCcw, Trash
 import { useMemo, useState } from "react";
 import { downloadBlob, downloadTextFile, safeFileName } from "@/lib/export/filenames";
 import { normalizeExternalUrl } from "@/lib/maker/bullets";
+import { resumeContactItems } from "@/lib/resume/contact";
 import { createLatexStyleSource } from "@/lib/resume/source";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import { cn } from "@/lib/utils";
@@ -224,29 +225,39 @@ export function ResumePreview() {
 
       <article className="resume-page mx-auto min-h-[1000px] w-full max-w-[850px] bg-white px-8 py-10 shadow-soft sm:px-12 print:min-h-0 print:max-w-none print:shadow-none">
         <header className="pb-4 text-center">
+          <div className="print-only">
+            <h1 className="text-3xl font-bold uppercase tracking-normal text-ink">
+              {resume.personal.fullName}
+            </h1>
+            {resume.personal.title ? (
+              <p className="mt-1 text-sm font-medium text-slate-700">{resume.personal.title}</p>
+            ) : null}
+          </div>
           <input
             aria-label="Resume full name"
-            className="w-full bg-transparent text-center text-3xl font-bold uppercase tracking-normal text-ink outline-none"
+            className="no-print w-full bg-transparent text-center text-3xl font-bold uppercase tracking-normal text-ink outline-none"
             value={resume.personal.fullName}
             onChange={(event) => updatePersonal("fullName", event.target.value)}
           />
           <input
             aria-label="Resume title"
-            className="mt-1 w-full bg-transparent text-center text-sm font-medium text-slate-700 outline-none"
+            className="no-print mt-1 w-full bg-transparent text-center text-sm font-medium text-slate-700 outline-none"
             value={resume.personal.title ?? ""}
             onChange={(event) => updatePersonal("title", event.target.value)}
           />
           <p className="mt-2 text-xs text-slate-600">
-            {[
-              resume.personal.email,
-              resume.personal.phone,
-              resume.personal.location,
-              resume.personal.github,
-              resume.personal.linkedin,
-              resume.personal.portfolio,
-            ]
-              .filter(Boolean)
-              .join(" | ")}
+            {resumeContactItems(resume.personal).map((item, index) => (
+              <span key={item.key}>
+                {index > 0 ? " | " : ""}
+                {item.href ? (
+                  <a className="underline-offset-2 hover:underline" href={item.href} target="_blank" rel="noreferrer">
+                    {item.label}
+                  </a>
+                ) : (
+                  item.label
+                )}
+              </span>
+            ))}
           </p>
         </header>
 
