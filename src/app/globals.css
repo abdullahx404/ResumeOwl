@@ -516,8 +516,15 @@ textarea {
 
   html,
   body {
+    background: white !important;
+    color: #111827 !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+  }
+
+  #__next,
+  main {
+    background: white !important;
   }
 
   .no-print {
@@ -529,6 +536,8 @@ textarea {
   }
 
   .resume-page {
+    background: white !important;
+    color: #111827 !important;
     box-shadow: none !important;
     margin: 0 !important;
     padding: 0.55in !important;
@@ -540,6 +549,13 @@ textarea {
   .resume-page a {
     color: inherit !important;
     text-decoration: underline;
+  }
+
+  .resume-page input,
+  .resume-page textarea,
+  .resume-page select {
+    background: transparent !important;
+    color: #111827 !important;
   }
 
   .resume-heading {
