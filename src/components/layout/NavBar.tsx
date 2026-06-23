@@ -41,7 +41,7 @@ export function NavBar() {
       ?.href ?? "/";
 
   return (
-    <header className="no-print sticky top-0 z-40 bg-transparent px-4 py-3 sm:px-6 lg:px-8">
+    <header className="no-print sticky top-0 z-40 bg-white/72 px-4 py-3 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur-2xl sm:px-6 lg:px-8">
       <div
         className={cn(
           "absolute inset-x-0 top-0 h-0.5 origin-left bg-owl-600 transition-transform duration-300",
