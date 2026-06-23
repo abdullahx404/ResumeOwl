@@ -30,7 +30,7 @@ const tools = [
 
 export default function HomePage() {
   return (
-    <main id="main-content" className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+    <main id="main-content" className="app-page subtle-grid min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="motion-surface border-b border-slate-200 pb-8">
           <div>
@@ -51,7 +51,7 @@ export default function HomePage() {
               <Link
                 key={tool.href}
                 href={tool.href}
-                className="interactive-surface motion-surface rounded-lg border border-slate-200 bg-white p-5 shadow-soft hover:border-owl-100"
+                className="interactive-surface motion-surface touch-feedback surface-card rounded-lg p-5 shadow-soft hover:border-owl-100"
                 style={{ animationDelay: `${index * 45}ms` }}
               >
                 <Icon className="h-6 w-6 text-owl-700" aria-hidden="true" />

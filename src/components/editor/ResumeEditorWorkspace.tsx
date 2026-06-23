@@ -40,7 +40,7 @@ export function ResumeEditorWorkspace() {
     <>
       <NotificationPill message={notice} tone={notice.includes("Paste") ? "error" : "info"} />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(360px,1fr)]">
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
+        <section className="surface-card rounded-lg p-5 shadow-soft">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-semibold text-ink">Resume Editor</h1>
@@ -61,7 +61,7 @@ export function ResumeEditorWorkspace() {
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <button
               type="button"
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-owl-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-owl-900 disabled:cursor-not-allowed disabled:opacity-60"
+              className="touch-feedback inline-flex items-center justify-center gap-2 rounded-md bg-owl-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-owl-900 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={!canImport || isImporting}
               onClick={applyImport}
             >
@@ -70,7 +70,7 @@ export function ResumeEditorWorkspace() {
             </button>
             <Link
               href="/preview"
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="touch-feedback inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               onClick={() => {
                 if (imported) {
                   setResume(imported);
@@ -83,7 +83,7 @@ export function ResumeEditorWorkspace() {
           </div>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
+        <section className="surface-card rounded-lg p-5 shadow-soft">
           <h2 className="text-lg font-semibold text-ink">Imported Structure</h2>
           {canImport && imported ? (
             <div className="mt-4 space-y-4 text-sm text-slate-700">
