@@ -32,9 +32,10 @@ const styles = StyleSheet.create({
     fontFamily: "Times-Bold",
     textTransform: "uppercase",
     letterSpacing: 0,
+    marginBottom: 8,
   },
   title: {
-    marginTop: 4,
+    marginTop: 2,
     fontSize: 12,
     fontFamily: "Times-Bold",
     color: "#374151",
@@ -47,8 +48,12 @@ const styles = StyleSheet.create({
     color: "#4b5563",
   },
   contactLink: {
-    color: "#4b5563",
+    color: "#2563eb",
     textDecoration: "underline",
+  },
+  contactText: {
+    color: "#4b5563",
+    textDecoration: "none",
   },
   section: {
     marginTop: 13,
@@ -97,8 +102,8 @@ const styles = StyleSheet.create({
     color: "#4b5563",
   },
   projectLink: {
-    marginLeft: 4,
-    color: "#64748b",
+    marginLeft: 8,
+    color: "#2563eb",
     fontFamily: "Times-Italic",
     textDecoration: "underline",
   },
@@ -176,13 +181,13 @@ function ContactLine({ resume }: { resume: ResumeDocument }) {
     <View style={styles.contactRow}>
       {contactItems.map((item, index) => (
         <Text key={item.key}>
-          {index > 0 ? " | " : ""}
-          {item.href ? (
+          <Text style={styles.contactText}>{index > 0 ? " | " : ""}</Text>
+          {item.href && item.key !== "phone" ? (
             <Link style={styles.contactLink} src={item.href}>
               {item.label}
             </Link>
           ) : (
-            item.label
+            <Text style={styles.contactText}>{item.label}</Text>
           )}
         </Text>
       ))}
