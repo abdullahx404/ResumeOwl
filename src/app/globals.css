@@ -269,6 +269,24 @@ textarea {
   color: var(--heading);
 }
 
+:root[data-theme="dark"] button,
+:root[data-theme="dark"] a[role="button"] {
+  border-color: #31594e;
+}
+
+:root[data-theme="dark"] button:not(:disabled):hover,
+:root[data-theme="dark"] a[role="button"]:hover {
+  border-color: #6ee7b7;
+  box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.16);
+}
+
+:root[data-theme="dark"] button:disabled {
+  background: #1a2a25 !important;
+  border-color: #31594e !important;
+  color: #9ca3af !important;
+  opacity: 0.75 !important;
+}
+
 :root[data-theme="dark"] input::placeholder,
 :root[data-theme="dark"] textarea::placeholder {
   color: #71827b;
