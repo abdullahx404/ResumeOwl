@@ -239,7 +239,7 @@ export function ResumePreview() {
         </div>
       </aside>
 
-      <article className="resume-page mx-auto min-h-[1000px] w-full max-w-[850px] bg-white px-8 py-10 shadow-soft sm:px-12 print:min-h-0 print:max-w-none print:shadow-none">
+      <article className="resume-page mx-auto min-h-[1000px] w-full max-w-[850px] rounded-lg border border-slate-200 bg-white px-8 py-10 shadow-soft sm:px-12 print:min-h-0 print:max-w-none print:rounded-none print:border-0 print:shadow-none">
         <header className="pb-4 text-center">
           <div className="print-only">
             <h1 className="text-3xl font-bold uppercase tracking-normal text-ink">
