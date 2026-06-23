@@ -17,7 +17,7 @@ const styles = StyleSheet.create({
   page: {
     paddingHorizontal: 48,
     paddingVertical: 42,
-    fontFamily: "Helvetica",
+    fontFamily: "Times-Roman",
     fontSize: 10.5,
     color: "#111827",
     lineHeight: 1.42,
@@ -29,14 +29,14 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 24,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Times-Bold",
     textTransform: "uppercase",
     letterSpacing: 0,
   },
   title: {
     marginTop: 4,
     fontSize: 12,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Times-Bold",
     color: "#374151",
   },
   contactRow: {
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   itemTitle: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Times-Bold",
   },
   muted: {
     color: "#4b5563",
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     color: "#1f2937",
   },
   inlineBold: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Times-Bold",
   },
   projectMeta: {
     maxWidth: 260,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   projectLink: {
     marginLeft: 4,
     color: "#64748b",
-    fontFamily: "Helvetica-Oblique",
+    fontFamily: "Times-Italic",
     textDecoration: "underline",
   },
 });
