@@ -331,8 +331,8 @@ function AnalysisResults({
                 key={skill.keyword}
                 className={
                   skill.present
-                    ? "rounded-full bg-owl-50 px-3 py-1 text-xs font-semibold text-owl-900"
-                    : "rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950"
+                    ? "status-pill status-pill-success"
+                    : "status-pill status-pill-warning"
                 }
               >
                 {skill.present ? "Found" : "Missing"}: {skill.keyword}
@@ -393,9 +393,9 @@ function AnalysisResults({
 
 function Metric({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-md bg-slate-50 px-4 py-3">
-      <p className="text-lg font-semibold text-ink">{value}</p>
-      <p className="text-xs text-slate-500">{label}</p>
+    <div className="score-metric-card rounded-md px-4 py-3">
+      <p className="text-lg font-semibold">{value}</p>
+      <p className="text-xs">{label}</p>
     </div>
   );
 }
@@ -429,8 +429,8 @@ function PillList({
           key={item}
           className={
             tone === "warning"
-              ? "rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950"
-              : "rounded-full bg-owl-50 px-3 py-1 text-xs font-semibold text-owl-900"
+              ? "status-pill status-pill-warning"
+              : "status-pill status-pill-success"
           }
         >
           {item}
@@ -455,7 +455,7 @@ function AiFeedbackPanel({
 
   if (status === "loading") {
     return (
-      <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+      <div className="ai-status-card ai-status-info rounded-lg border p-4">
         <p className="flex items-center gap-2 text-sm font-semibold text-blue-950">
           <Loader2 className="h-4 w-4 animate-spin" />
           Checking AI Feedback...
@@ -469,7 +469,7 @@ function AiFeedbackPanel({
 
   if (status === "unavailable") {
     return (
-      <div className="rounded-lg border border-amber-100 bg-amber-50 p-4">
+      <div className="ai-status-card ai-status-warning rounded-lg border p-4">
         <p className="text-sm font-semibold text-amber-950">AI Feedback Failed, Local Scan Validated</p>
         <p className="mt-1 text-sm leading-6 text-amber-900">
           AI feedback is not configured. Add `GEMINI_API_KEY`, `GROQ_API_KEY`, or `OPENROUTER_API_KEY` on the server to enable recruiter-style AI feedback.
@@ -480,7 +480,7 @@ function AiFeedbackPanel({
 
   if (status === "error" || !feedback) {
     return (
-      <div className="rounded-lg border border-red-100 bg-red-50 p-4">
+      <div className="ai-status-card ai-status-error rounded-lg border p-4">
         <p className="text-sm font-semibold text-red-950">AI Feedback Failed, Local Scan Validated</p>
         <p className="mt-1 text-sm leading-6 text-red-900">
           {error || "The local scan is still valid. Try again later or check the configured AI provider."}
@@ -490,7 +490,7 @@ function AiFeedbackPanel({
   }
 
   return (
-    <div className="space-y-4 rounded-lg border border-owl-100 bg-owl-50 p-4">
+    <div className="ai-feedback-card space-y-4 rounded-lg border p-4">
       <div>
         <p className="text-sm font-semibold uppercase tracking-wide text-owl-900">
           Recruiter-style AI feedback
@@ -527,7 +527,7 @@ function AiFeedbackPanel({
       <p className="text-sm leading-6 text-owl-950">{feedback.beforeAfterSummary}</p>
 
       {feedback.cautionNotes.length ? (
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+        <div className="verify-card rounded-md border p-3">
           <h3 className="text-sm font-semibold text-amber-950">Verify before using</h3>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-amber-950">
             {feedback.cautionNotes.map((note) => (

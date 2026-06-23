@@ -447,6 +447,60 @@ textarea {
   z-index: 0;
 }
 
+.score-metric-card {
+  background: #f8fafc;
+  color: #111827;
+}
+
+.score-metric-card p:last-child {
+  color: #64748b;
+}
+
+.status-pill {
+  border-radius: 9999px;
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+}
+
+.status-pill-success {
+  background: #ecfdf5;
+  color: #064e3b;
+}
+
+.status-pill-warning {
+  background: #fffbeb;
+  color: #78350f;
+}
+
+.ai-status-card,
+.ai-feedback-card,
+.verify-card {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+  color: #064e3b;
+}
+
+.ai-status-info {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e3a8a;
+}
+
+.ai-status-warning,
+.verify-card {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #78350f;
+}
+
+.ai-status-error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #7f1d1d;
+}
+
 @media (min-width: 768px) {
   .nav-header-tab {
     font-size: 0.82rem;
@@ -482,6 +536,51 @@ textarea {
 
 :root[data-theme="dark"] .nav-header-cursor {
   background: #6ee7b7;
+}
+
+:root[data-theme="dark"] .score-metric-card {
+  background: #17362d;
+  border: 1px solid #31594e;
+  color: #ecfdf5;
+}
+
+:root[data-theme="dark"] .score-metric-card p:last-child {
+  color: #b7c7c1;
+}
+
+:root[data-theme="dark"] .status-pill-success {
+  background: #d1fae5 !important;
+  color: #064e3b !important;
+}
+
+:root[data-theme="dark"] .status-pill-warning {
+  background: #fef3c7 !important;
+  color: #78350f !important;
+}
+
+:root[data-theme="dark"] .ai-feedback-card {
+  background: #102820 !important;
+  border-color: #34d399 !important;
+  color: #d1fae5 !important;
+}
+
+:root[data-theme="dark"] .ai-status-info {
+  background: #10233a !important;
+  border-color: #60a5fa !important;
+  color: #dbeafe !important;
+}
+
+:root[data-theme="dark"] .ai-status-warning,
+:root[data-theme="dark"] .verify-card {
+  background: #3a2b0d !important;
+  border-color: #facc15 !important;
+  color: #fef3c7 !important;
+}
+
+:root[data-theme="dark"] .ai-status-error {
+  background: #3a1416 !important;
+  border-color: #f87171 !important;
+  color: #fecaca !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
