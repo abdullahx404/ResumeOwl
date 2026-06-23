@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ClipboardPaste, Eye, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowRight, ClipboardPaste, Eye, FileUp, Loader2 } from "lucide-react";
+import { ChangeEvent, useMemo, useState } from "react";
 import { NotificationPill } from "@/components/ui/NotificationPill";
+import { uploadHelpText, validateResumeFiles } from "@/lib/parsing/file-validation";
+import { parseResumeFiles } from "@/lib/parsing/resume-parser";
 import { importResumeText, importedResumeSummary } from "@/lib/resume/importer";
 import { useResumeStore } from "@/stores/resume-store";
 import type { ResumeDocument } from "@/types/resume";
@@ -13,6 +15,7 @@ export function ResumeEditorWorkspace() {
   const [rawResume, setRawResume] = useState("");
   const [notice, setNotice] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [importedResume, setImportedResume] = useState<ResumeDocument | null>(null);
   const canImport = rawResume.trim().length > 0;
   const imported = useMemo(
@@ -23,6 +26,33 @@ export function ResumeEditorWorkspace() {
   function flash(message: string) {
     setNotice(message);
     window.setTimeout(() => setNotice(""), 2400);
+  }
+
+  async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+
+    if (!files.length) {
+      return;
+    }
+
+    const validation = validateResumeFiles(files);
+
+    if (!validation.valid) {
+      flash(validation.message ?? "Upload could not be accepted.");
+      return;
+    }
+
+    try {
+      setIsParsing(true);
+      const parsed = await parseResumeFiles(files);
+      setRawResume(parsed.map((file) => file.text).join("\n\n"));
+      flash(`${parsed.length} file${parsed.length === 1 ? "" : "s"} parsed locally. Click Import To ResumeOwl.`);
+    } catch {
+      flash("Could not parse that file. Try PDF, DOCX, TXT, or paste text.");
+    } finally {
+      setIsParsing(false);
+    }
   }
 
   async function applyImport() {
@@ -61,11 +91,24 @@ export function ResumeEditorWorkspace() {
             placeholder="Paste your current resume text here..."
           />
 
+          <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-slate-300 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-owl-600 hover:bg-owl-50">
+            <FileUp className="h-4 w-4" aria-hidden="true" />
+            {isParsing ? "Parsing resume..." : "Upload Resume File"}
+            <input
+              className="sr-only"
+              type="file"
+              multiple
+              accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+              onChange={handleFiles}
+            />
+          </label>
+          <p className="mt-2 text-xs text-slate-500">{uploadHelpText()}</p>
+
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <button
               type="button"
               className="touch-feedback inline-flex items-center justify-center gap-2 rounded-md bg-owl-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-owl-900 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!canImport || isImporting}
+              disabled={!canImport || isImporting || isParsing}
               onClick={applyImport}
             >
               {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
