@@ -12,8 +12,9 @@ export function ResumeEditorWorkspace() {
   const [rawResume, setRawResume] = useState("");
   const [notice, setNotice] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  const canImport = rawResume.trim().length > 0;
   const imported = useMemo(
-    () => (rawResume.trim().length > 80 ? importResumeText(rawResume) : null),
+    () => (rawResume.trim() ? importResumeText(rawResume) : null),
     [rawResume],
   );
 
@@ -23,8 +24,8 @@ export function ResumeEditorWorkspace() {
   }
 
   async function applyImport() {
-    if (!imported) {
-      flash("Paste a resume with enough content first.");
+    if (!canImport || !imported) {
+      flash("Paste your resume text first.");
       return;
     }
 
@@ -61,7 +62,7 @@ export function ResumeEditorWorkspace() {
             <button
               type="button"
               className="inline-flex items-center justify-center gap-2 rounded-md bg-owl-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-owl-900 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!imported || isImporting}
+              disabled={!canImport || isImporting}
               onClick={applyImport}
             >
               {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
@@ -84,7 +85,7 @@ export function ResumeEditorWorkspace() {
 
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft">
           <h2 className="text-lg font-semibold text-ink">Imported Structure</h2>
-          {imported ? (
+          {canImport && imported ? (
             <div className="mt-4 space-y-4 text-sm text-slate-700">
               <PreviewRow label="Name" value={imported.personal.fullName} />
               <PreviewRow label="Title" value={imported.personal.title ?? ""} />
@@ -98,7 +99,7 @@ export function ResumeEditorWorkspace() {
           ) : (
             <div className="mt-4 flex min-h-[420px] items-center justify-center rounded-md border border-dashed border-slate-300 p-6 text-center">
               <p className="max-w-sm text-sm leading-6 text-slate-600">
-                The imported structure will appear here once the pasted resume has enough content to parse.
+                The imported structure will appear here once you paste resume text.
               </p>
             </div>
           )}
