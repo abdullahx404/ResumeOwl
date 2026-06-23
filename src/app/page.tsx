@@ -32,7 +32,7 @@ export default function HomePage() {
   return (
     <main
       id="main-content"
-      className="app-page subtle-grid px-4 py-6 sm:px-6 lg:h-[calc(100vh-4rem)] lg:overflow-hidden lg:px-8 lg:py-8"
+      className="app-page subtle-grid px-4 py-6 sm:px-6 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden lg:px-8 lg:py-6"
     >
       <div className="mx-auto max-w-6xl">
         <header className="motion-surface border-b border-slate-200 pb-6">
