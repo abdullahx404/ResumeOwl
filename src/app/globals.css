@@ -116,6 +116,24 @@ textarea {
   animation: fade-up 220ms ease-out both;
 }
 
+.page-shell {
+  min-height: calc(100vh - 4rem);
+  padding: 2.5rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .page-shell {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-shell {
+    padding: 3rem 2rem;
+  }
+}
+
 .surface-card {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.94)),
@@ -160,6 +178,10 @@ textarea {
 :root[data-theme="dark"] .text-slate-600,
 :root[data-theme="dark"] .text-slate-700 {
   color: var(--muted) !important;
+}
+
+:root[data-theme="dark"] .text-white {
+  color: #f8fafc !important;
 }
 
 :root[data-theme="dark"] .border-slate-200,
