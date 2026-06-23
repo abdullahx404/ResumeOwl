@@ -178,7 +178,7 @@ export function ResumePreview() {
             onClick={() => setIsEditingSections((current) => !current)}
           >
             {isEditingSections ? <Save className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
-            {isEditingSections ? "Done Editing Sections" : "Edit Stored Sections"}
+            {isEditingSections ? "Done Editing Resume" : "Edit Resume"}
           </button>
 
           <div className="grid grid-cols-2 gap-2">
