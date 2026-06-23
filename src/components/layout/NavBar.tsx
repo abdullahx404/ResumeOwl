@@ -12,7 +12,6 @@ import { ThemeToggle } from "./ThemeToggle";
 const links = [
   { href: "/", label: "Home" },
   { href: "/preview", label: "Preview" },
-  { href: "/editor", label: "Edit" },
   { href: "/analyzer", label: "Analyze" },
   { href: "/maker", label: "Make" },
 ];
