@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp, Copy, Download, Edit3, FileDown, Printer, RotateCcw, Save, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { downloadBlob, downloadTextFile, safeFileName } from "@/lib/export/filenames";
+import { createPrintableResumeHtml } from "@/lib/export/print-html";
 import { normalizeExternalUrl } from "@/lib/maker/bullets";
 import { formatAcademicScore, sanitizeAcademicScoreInput } from "@/lib/resume/academic-score";
 import { resumeContactItems } from "@/lib/resume/contact";
@@ -101,12 +102,35 @@ export function ResumePreview() {
   }
 
   function printResume() {
-    const previousTitle = document.title;
-    document.title = safeFileName(resume.personal.fullName);
-    window.print();
-    window.setTimeout(() => {
-      document.title = previousTitle;
-    }, 500);
+    const frame = document.createElement("iframe");
+    frame.style.position = "fixed";
+    frame.style.right = "0";
+    frame.style.bottom = "0";
+    frame.style.width = "0";
+    frame.style.height = "0";
+    frame.style.border = "0";
+    frame.title = "Printable resume";
+    document.body.appendChild(frame);
+
+    const frameWindow = frame.contentWindow;
+    const frameDocument = frame.contentDocument;
+
+    if (!frameWindow || !frameDocument) {
+      document.body.removeChild(frame);
+      return;
+    }
+
+    frameDocument.open();
+    frameDocument.write(createPrintableResumeHtml(resume));
+    frameDocument.close();
+
+    frameWindow.focus();
+    frameWindow.setTimeout(() => {
+      frameWindow.print();
+      frameWindow.setTimeout(() => {
+        frame.remove();
+      }, 1000);
+    }, 100);
   }
 
   function sourceFileName(extension: "tex" | "docx") {
