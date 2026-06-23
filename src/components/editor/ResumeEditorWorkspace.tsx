@@ -6,12 +6,14 @@ import { useMemo, useState } from "react";
 import { NotificationPill } from "@/components/ui/NotificationPill";
 import { importResumeText, importedResumeSummary } from "@/lib/resume/importer";
 import { useResumeStore } from "@/stores/resume-store";
+import type { ResumeDocument } from "@/types/resume";
 
 export function ResumeEditorWorkspace() {
   const setResume = useResumeStore((state) => state.setResume);
   const [rawResume, setRawResume] = useState("");
   const [notice, setNotice] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  const [importedResume, setImportedResume] = useState<ResumeDocument | null>(null);
   const canImport = rawResume.trim().length > 0;
   const imported = useMemo(
     () => (rawResume.trim() ? importResumeText(rawResume) : null),
@@ -32,6 +34,7 @@ export function ResumeEditorWorkspace() {
     setIsImporting(true);
     await Promise.resolve();
     setResume(imported);
+    setImportedResume(imported);
     setIsImporting(false);
     flash(importedResumeSummary(imported));
   }
@@ -45,7 +48,7 @@ export function ResumeEditorWorkspace() {
             <div>
               <h1 className="text-2xl font-semibold text-ink">Resume Editor</h1>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Paste an existing resume, import it into ResumeOwl sections, then continue editing in the live preview.
+                Import your current resume first. ResumeOwl will extract the details, format them into sections, then you can edit the result.
               </p>
             </div>
             <ClipboardPaste className="h-7 w-7 text-owl-700" aria-hidden="true" />
@@ -70,42 +73,68 @@ export function ResumeEditorWorkspace() {
             </button>
             <Link
               href="/preview"
-              className="touch-feedback inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              aria-disabled={!importedResume}
+              className={`touch-feedback inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold transition hover:bg-slate-50 ${
+                importedResume ? "text-slate-700" : "pointer-events-none cursor-not-allowed text-slate-400 opacity-60"
+              }`}
               onClick={() => {
-                if (imported) {
-                  setResume(imported);
+                if (importedResume) {
+                  setResume(importedResume);
                 }
               }}
             >
               <Eye className="h-4 w-4" />
-              Open Editable Preview
+              Edit Imported Resume
             </Link>
           </div>
         </section>
 
         <section className="surface-card rounded-lg p-5 shadow-soft">
-          <h2 className="text-lg font-semibold text-ink">Imported Structure</h2>
-          {canImport && imported ? (
-            <div className="mt-4 space-y-4 text-sm text-slate-700">
-              <PreviewRow label="Name" value={imported.personal.fullName} />
-              <PreviewRow label="Title" value={imported.personal.title ?? ""} />
-              <PreviewRow label="Summary" value={imported.summary ?? ""} />
-              <PreviewRow label="Education" value={`${imported.education.length} item(s)`} />
-              <PreviewRow label="Skills" value={`${imported.skillGroups.length} group(s)`} />
-              <PreviewRow label="Projects" value={`${imported.projects.length} item(s)`} />
-              <PreviewRow label="Experience" value={`${imported.experience.length} item(s)`} />
-              <PreviewRow label="Optional" value={`${imported.optionalSections.length} section(s)`} />
-            </div>
+          <h2 className="text-lg font-semibold text-ink">Imported Resume Format</h2>
+          {importedResume ? (
+            <ImportedResumeDetails resume={importedResume} />
           ) : (
             <div className="mt-4 flex min-h-[420px] items-center justify-center rounded-md border border-dashed border-slate-300 p-6 text-center">
               <p className="max-w-sm text-sm leading-6 text-slate-600">
-                The imported structure will appear here once you paste resume text.
+                Paste your resume, then click Import To ResumeOwl. Extracted sections will appear here in ResumeOwl format.
               </p>
             </div>
           )}
         </section>
       </div>
     </>
+  );
+}
+
+function ImportedResumeDetails({ resume }: { resume: ResumeDocument }) {
+  return (
+    <div className="mt-4 space-y-4 text-sm text-slate-700">
+      <PreviewRow label="Full Name" value={resume.personal.fullName} />
+      <PreviewRow label="Title" value={resume.personal.title ?? ""} />
+      <PreviewRow label="Contact" value={[resume.personal.email, resume.personal.phone, resume.personal.location].filter(Boolean).join(" | ")} />
+      <PreviewRow label="Summary" value={resume.summary ?? ""} />
+      <PreviewRow
+        label="Education"
+        value={resume.education.map((item) => [item.institute, item.degree, item.cgpa].filter(Boolean).join(", ")).join("\n")}
+      />
+      <PreviewRow label="Relevant Courses" value={resume.courses.join(", ")} />
+      <PreviewRow
+        label="Skills"
+        value={resume.skillGroups.map((group) => `${group.name}: ${group.skills.join(", ")}`).join("\n")}
+      />
+      <PreviewRow
+        label="Projects"
+        value={resume.projects.map((project) => `${project.name}\n${project.bullets.map((bullet) => `- ${bullet}`).join("\n")}`).join("\n\n")}
+      />
+      <PreviewRow
+        label="Experience"
+        value={resume.experience.map((item) => `${item.role}, ${item.company}\n${item.bullets.map((bullet) => `- ${bullet}`).join("\n")}`).join("\n\n")}
+      />
+      <PreviewRow
+        label="Optional Sections"
+        value={resume.optionalSections.map((section) => `${section.title}\n${section.items.map((item) => `- ${item}`).join("\n")}`).join("\n\n")}
+      />
+    </div>
   );
 }
 
