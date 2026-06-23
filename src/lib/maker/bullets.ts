@@ -47,7 +47,7 @@ export function generateLocalBullets({
   count: number;
   sectionType: "project" | "experience";
 }): string[] {
-  const safeCount = Math.min(5, Math.max(sectionType === "project" ? 4 : 3, count));
+  const safeCount = Math.min(6, Math.max(3, count));
   const techItems = [...new Set(techStack.filter(Boolean))];
   const primaryTech = techItems.slice(0, 3).join(", ");
   const secondaryTech = techItems.slice(3, 6).join(", ");
@@ -67,6 +67,7 @@ export function generateLocalBullets({
       "Implemented privacy-focused behavior without relying on persistent cloud storage.",
       "Optimized the user flow for faster sharing, lower friction, and clearer transfer status.",
       "Designed a concise interface that keeps setup simple while preserving reliability.",
+      "Strengthened the implementation with clearer error handling and maintainable technical structure.",
     ].slice(0, safeCount).map(boldMeasurables);
   }
 
@@ -76,6 +77,7 @@ export function generateLocalBullets({
     "Improved team workflow by documenting decisions, blockers, and implementation details.",
     "Contributed to reliable delivery through testing, communication, and issue tracking.",
     "Turned ambiguous requirements into actionable technical tasks.",
+    "Supported measurable team outcomes through structured execution and regular progress tracking.",
   ].slice(0, safeCount).map(boldMeasurables);
 }
 

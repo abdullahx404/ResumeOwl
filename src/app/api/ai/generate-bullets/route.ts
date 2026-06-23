@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { generateAiText, hasAiProvider } from "@/lib/ai/provider";
+import { AiProviderError, generateAiText, hasAiProvider } from "@/lib/ai/provider";
+import { generateLocalBullets, inferTechStack } from "@/lib/maker/bullets";
 import {
   bulletGenerationRequestSchema,
   bulletGenerationResponseSchema,
@@ -66,6 +67,26 @@ function parseResumeEntry(raw: string, count: number) {
   });
 }
 
+function localFallback(input: ReturnType<typeof bulletGenerationRequestSchema.parse>, error?: unknown) {
+  const techStack = input.techStack.length ? input.techStack : inferTechStack(input.notes).slice(0, 6);
+  const bullets = generateLocalBullets({
+    name: input.name,
+    notes: input.notes,
+    techStack,
+    count: input.count,
+    sectionType: input.sectionType,
+  });
+  const providerStatus = error instanceof AiProviderError && error.status ? ` (${error.status})` : "";
+
+  return NextResponse.json({
+    configured: false,
+    bullets,
+    techStack,
+    suggestedName: input.name,
+    error: `AI provider unavailable${providerStatus}. Generated editable local bullets instead.`,
+  });
+}
+
 export async function POST(request: Request) {
   let payload: unknown;
 
@@ -82,13 +103,7 @@ export async function POST(request: Request) {
   }
 
   if (!hasAiProvider()) {
-    return NextResponse.json(
-      {
-        configured: false,
-        error: "AI generation is unavailable. Check the API key, quota, or provider limit.",
-      },
-      { status: 503 },
-    );
+    return localFallback(parsed.data);
   }
 
   try {
@@ -103,13 +118,7 @@ export async function POST(request: Request) {
       bullets: result.bullets,
       suggestedName: parsed.data.name || result.suggestedName,
     });
-  } catch {
-    return NextResponse.json(
-      {
-        configured: true,
-        error: "AI generation failed or provider limit reached. Try again later.",
-      },
-      { status: 503 },
-    );
+  } catch (error) {
+    return localFallback(parsed.data, error);
   }
 }

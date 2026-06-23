@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { POST } from "./route";
 
 describe("POST /api/ai/generate-bullets", () => {
-  it("returns an AI availability error when AI is not configured", async () => {
+  it("falls back to local bullets when AI is not configured", async () => {
     const response = await POST(
       new Request("http://localhost/api/ai/generate-bullets", {
         method: "POST",
@@ -21,10 +21,10 @@ describe("POST /api/ai/generate-bullets", () => {
       bullets?: string[];
     };
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(200);
     expect(data.configured).toBe(false);
     expect(data.error).toBeTruthy();
-    expect(data.bullets).toBeUndefined();
+    expect(data.bullets?.length).toBe(3);
   });
 
   it("rejects invalid input", async () => {

@@ -15,7 +15,7 @@ describe("maker bullets", () => {
     expect(bullets[0]).toContain("React, TypeScript");
   });
 
-  it("keeps project bullet counts between 4 and 5", () => {
+  it("keeps local bullet counts between 3 and 6", () => {
     expect(
       generateLocalBullets({
         name: "App",
@@ -24,7 +24,17 @@ describe("maker bullets", () => {
         count: 10,
         sectionType: "project",
       }),
-    ).toHaveLength(5);
+    ).toHaveLength(6);
+
+    expect(
+      generateLocalBullets({
+        name: "App",
+        notes: "built app",
+        techStack: [],
+        count: 1,
+        sectionType: "project",
+      }),
+    ).toHaveLength(3);
   });
 
   it("does not duplicate leading action verbs in fallback bullets", () => {

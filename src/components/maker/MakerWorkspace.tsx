@@ -282,7 +282,7 @@ export function MakerWorkspace() {
             : item,
         ),
       );
-      flash(data.configured === false ? "AI generation unavailable." : "Bullets generated.");
+      flash(data.configured === false ? "Bullets generated locally; AI provider unavailable." : "Bullets generated.");
     } catch {
       flash("AI generation failed or provider limit reached.");
     } finally {
@@ -368,7 +368,7 @@ export function MakerWorkspace() {
       setExperience((current) =>
         current.map((entry) => (entry.id === item.id ? { ...entry, bullets } : entry)),
       );
-      flash(data.configured === false ? "AI generation unavailable." : "Bullets generated.");
+      flash(data.configured === false ? "Bullets generated locally; AI provider unavailable." : "Bullets generated.");
     } catch {
       flash("AI generation failed or provider limit reached.");
     } finally {
