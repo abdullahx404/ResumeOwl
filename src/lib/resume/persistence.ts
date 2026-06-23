@@ -9,6 +9,7 @@ export type StoredProfile = {
 
 const resumeStorageKey = "resumeowl.resume.v1";
 const profileStorageKey = "resumeowl.profile.v1";
+const themeStorageKey = "resumeowl-theme";
 const sampleContactValues = new Set([
   "amina@example.com",
   "+92 300 0000000",
@@ -99,4 +100,24 @@ export function clearStoredResume() {
   if (canUseBrowserStorage()) {
     localStorage.removeItem(resumeStorageKey);
   }
+}
+
+export type StoredTheme = "light" | "dark";
+
+export function getStoredTheme(): StoredTheme {
+  if (!canUseBrowserStorage()) {
+    return "light";
+  }
+
+  const value = localStorage.getItem(themeStorageKey);
+
+  return value === "dark" || value === "light" ? value : "light";
+}
+
+export function saveStoredTheme(theme: StoredTheme) {
+  if (!canUseBrowserStorage()) {
+    return;
+  }
+
+  localStorage.setItem(themeStorageKey, theme);
 }

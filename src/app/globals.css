@@ -4,6 +4,24 @@
 
 :root {
   color-scheme: light;
+  --app-bg: #f8fafc;
+  --app-text: #111827;
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --border: #cbd5e1;
+  --muted: #475569;
+  --heading: #111827;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --app-bg: #07120f;
+  --app-text: #e5e7eb;
+  --surface: #0f1d1a;
+  --surface-soft: #13251f;
+  --border: #244139;
+  --muted: #a7b3ae;
+  --heading: #f8fafc;
 }
 
 * {
@@ -13,9 +31,15 @@
 body {
   background:
     linear-gradient(180deg, rgba(236, 253, 245, 0.42), rgba(248, 250, 252, 0) 280px),
-    #f8fafc;
-  color: #111827;
+    var(--app-bg);
+  color: var(--app-text);
   min-height: 100vh;
+}
+
+:root[data-theme="dark"] body {
+  background:
+    linear-gradient(180deg, rgba(4, 120, 87, 0.18), rgba(7, 18, 15, 0) 300px),
+    var(--app-bg);
 }
 
 button,
@@ -95,8 +119,62 @@ textarea {
 .surface-card {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.94)),
-    white;
+    var(--surface);
   border: 1px solid rgba(203, 213, 225, 0.82);
+}
+
+:root[data-theme="dark"] .surface-card,
+:root[data-theme="dark"] .bg-white {
+  background-color: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+
+:root[data-theme="dark"] .bg-slate-50,
+:root[data-theme="dark"] .bg-slate-100 {
+  background-color: var(--surface-soft) !important;
+}
+
+:root[data-theme="dark"] .text-ink,
+:root[data-theme="dark"] .text-slate-800,
+:root[data-theme="dark"] .text-slate-900 {
+  color: var(--heading) !important;
+}
+
+:root[data-theme="dark"] .text-slate-500,
+:root[data-theme="dark"] .text-slate-600,
+:root[data-theme="dark"] .text-slate-700 {
+  color: var(--muted) !important;
+}
+
+:root[data-theme="dark"] .border-slate-200,
+:root[data-theme="dark"] .border-slate-300 {
+  border-color: var(--border) !important;
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] select {
+  background-color: #0b1714;
+  border-color: var(--border);
+  color: var(--heading);
+}
+
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+  color: #71827b;
+}
+
+:root[data-theme="dark"] .resume-page {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+:root[data-theme="dark"] .resume-page .text-slate-500,
+:root[data-theme="dark"] .resume-page .text-slate-600,
+:root[data-theme="dark"] .resume-page .text-slate-700,
+:root[data-theme="dark"] .resume-page .text-slate-800,
+:root[data-theme="dark"] .resume-page .text-ink {
+  color: inherit !important;
 }
 
 .subtle-grid {

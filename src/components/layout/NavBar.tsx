@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { getStoredProfile } from "@/lib/resume/persistence";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "./ThemeToggle";
 
 const links = [
   { href: "/", label: "Home" },
@@ -71,6 +72,7 @@ export function NavBar() {
           <span className="ml-2 hidden max-w-40 truncate rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700 sm:inline">
             {name}
           </span>
+          <ThemeToggle />
         </div>
       </nav>
     </header>
