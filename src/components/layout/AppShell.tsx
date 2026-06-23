@@ -8,6 +8,7 @@ import {
   type StoredProfile,
 } from "@/lib/resume/persistence";
 import { useResumeStore } from "@/stores/resume-store";
+import { NavBar } from "./NavBar";
 
 type Step = "welcome" | "name" | "role" | "done";
 
@@ -48,6 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <NavBar />
       {children}
       {hydrated && step !== "done" ? (
         <div
