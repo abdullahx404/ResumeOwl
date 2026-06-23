@@ -29,6 +29,11 @@ const actionVerbs = [
 ];
 
 const extraSkillTerms = [
+  "ai/ml",
+  "ai ml",
+  "artificial intelligence",
+  "machine learning",
+  "deep learning",
   "rest api",
   "rest apis",
   "websocket",
@@ -74,6 +79,9 @@ const skillVocabulary = [...new Set([...commonSkills, ...commonCourses, ...extra
 );
 
 const canonicalSkillLabels = new Map<string, string>([
+  ["ai ml", "AI/ML"],
+  ["ai/ml", "AI/ML"],
+  ["artificial intelligence", "AI/ML"],
   ["css3", "CSS"],
   ["front end", "Frontend"],
   ["front-end", "Frontend"],
@@ -100,6 +108,7 @@ function canonicalSkillLabel(term: string): string {
 }
 
 const skillPresenceAliases = new Map<string, string[]>([
+  ["ai/ml", ["ai/ml", "ai ml", "artificial intelligence", "machine learning", "ml", "deep learning", "tensorflow", "pytorch", "scikit-learn"]],
   ["backend development", ["backend", "back-end", "back end", "server-side", "node.js", "express.js"]],
   ["frontend", ["frontend", "front-end", "front end", "react", "angular", "vue", "html", "css"]],
   ["front-end frameworks", ["react", "angular", "vue", "next.js", "frontend", "front-end"]],

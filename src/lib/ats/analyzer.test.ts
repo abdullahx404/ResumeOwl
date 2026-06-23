@@ -137,6 +137,22 @@ describe("analyzeResumeLocally", () => {
     expect(result.missingKeywords).toEqual(expect.arrayContaining(["Express.js", "Angular"]));
   });
 
+  it("detects AI/ML slash variants as required skill keywords", () => {
+    const result = analyzeResumeLocally({
+      resumeText: "Skills\nBackend, Django, Python",
+      jobDescription: "Need backend, Django, and AI/ML experience.",
+    });
+
+    expect(result.requiredSkillMatches).toEqual(
+      expect.arrayContaining([
+        { keyword: "Backend", present: true },
+        { keyword: "Django", present: true },
+        { keyword: "AI/ML", present: false },
+      ]),
+    );
+    expect(result.missingKeywords).toContain("AI/ML");
+  });
+
   it("flags a resume title that does not align with the target job title", () => {
     const result = analyzeResumeLocally({
       resumeText: [
