@@ -136,4 +136,36 @@ describe("analyzeResumeLocally", () => {
 
     expect(result.missingKeywords).toEqual(expect.arrayContaining(["Express.js", "Angular"]));
   });
+
+  it("flags a resume title that does not align with the target job title", () => {
+    const result = analyzeResumeLocally({
+      resumeText: [
+        "Abdullah Zia",
+        "Frontend Engineer",
+        "abdullah@example.com",
+        "Skills",
+        "React, TypeScript",
+        "Projects",
+        "- Built a React application for 1000 users.",
+      ].join("\n"),
+      jobDescription: [
+        "Job Title: Backend Engineer",
+        "Required skills: Node.js, PostgreSQL, REST APIs",
+      ].join("\n"),
+    });
+
+    expect(result.atsIssues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "title-mismatch",
+          title: "Resume title may not match target role",
+        }),
+      ]),
+    );
+    expect(result.suggestedImprovements).toEqual(
+      expect.arrayContaining([
+        "Align the resume title under your name with the target role: Backend Engineer.",
+      ]),
+    );
+  });
 });

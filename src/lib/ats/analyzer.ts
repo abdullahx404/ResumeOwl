@@ -135,6 +135,80 @@ function detectContactInfo(resumeText: string) {
   };
 }
 
+function detectResumeTitle(resumeText: string): string {
+  const lines = splitLines(resumeText).slice(0, 8);
+
+  return (
+    lines.find((line, index) => {
+      if (index === 0) {
+        return false;
+      }
+
+      return (
+        line.length <= 80 &&
+        !/[|@]|\d{5,}|https?:\/\/|www\.|github|linkedin/i.test(line) &&
+        !sectionPatterns.education.test(line) &&
+        !sectionPatterns.skills.test(line)
+      );
+    }) ?? ""
+  );
+}
+
+function detectTargetTitle(jobDescription: string): string {
+  const lines = splitLines(jobDescription).slice(0, 12);
+  const labeled = lines
+    .map((line) => line.match(/^(?:job\s*title|position|role|title)\s*:\s*(.+)$/i)?.[1]?.trim())
+    .find(Boolean);
+
+  if (labeled) {
+    return labeled;
+  }
+
+  return (
+    lines.find((line) =>
+      line.length <= 80 &&
+      /\b(engineer|developer|designer|analyst|manager|intern|specialist|consultant|administrator|architect)\b/i.test(line) &&
+      !/[.!?]$/.test(line),
+    ) ?? ""
+  );
+}
+
+function titleMatches(resumeTitle: string, targetTitle: string) {
+  if (!targetTitle) {
+    return true;
+  }
+
+  if (!resumeTitle) {
+    return false;
+  }
+
+  const resumeWords = normalizeText(resumeTitle).split(" ").filter((word) => word.length > 2);
+  const targetWords = normalizeText(targetTitle).split(" ").filter((word) => word.length > 2);
+  const roleGenericWords = new Set([
+    "engineer",
+    "developer",
+    "designer",
+    "analyst",
+    "manager",
+    "intern",
+    "specialist",
+    "consultant",
+    "administrator",
+    "architect",
+  ]);
+  const targetSpecificWords = targetWords.filter((word) => !roleGenericWords.has(word));
+
+  if (!targetWords.length) {
+    return true;
+  }
+
+  if (targetSpecificWords.length) {
+    return targetSpecificWords.some((word) => resumeWords.includes(word));
+  }
+
+  return targetWords.some((word) => resumeWords.includes(word)) || hasTerm(resumeTitle, targetTitle);
+}
+
 function extractBullets(resumeText: string): string[] {
   return splitLines(resumeText)
     .filter((line) => /^[-*•]|^\d+[.)]/.test(line))
@@ -224,11 +298,15 @@ function buildIssues({
   contactInfo,
   weakBullets,
   missingKeywords,
+  resumeTitle,
+  targetTitle,
 }: {
   missingSections: string[];
   contactInfo: ReturnType<typeof detectContactInfo>;
   weakBullets: WeakBullet[];
   missingKeywords: string[];
+  resumeTitle: string;
+  targetTitle: string;
 }): AtsIssue[] {
   const issues: AtsIssue[] = [];
 
@@ -274,6 +352,17 @@ function buildIssues({
       severity: "warning",
       title: "Missing job keywords",
       detail: "Some important role skills or tools from the job post were not found in the resume.",
+    });
+  }
+
+  if (targetTitle && !titleMatches(resumeTitle, targetTitle)) {
+    issues.push({
+      id: "title-mismatch",
+      severity: "warning",
+      title: "Resume title may not match target role",
+      detail: resumeTitle
+        ? `The resume header title "${resumeTitle}" does not clearly align with the target role "${targetTitle}".`
+        : `Add a resume title under the name that aligns with the target role "${targetTitle}".`,
     });
   }
 
@@ -356,12 +445,16 @@ export function analyzeResumeLocally({
     (section) => !detectedSections.includes(section),
   );
   const contactInfo = detectContactInfo(resumeText);
+  const resumeTitle = detectResumeTitle(resumeText);
+  const targetTitle = detectTargetTitle(jobDescription);
   const weakBullets = analyzeBullets(extractBullets(resumeText));
   const atsIssues = buildIssues({
     missingSections,
     contactInfo,
     weakBullets,
     missingKeywords,
+    resumeTitle,
+    targetTitle,
   });
   const scoreBreakdown = scoreResult({
     matchedKeywords,
@@ -381,6 +474,9 @@ export function analyzeResumeLocally({
     missingSections.length
       ? `Add missing common sections if relevant: ${missingSections.join(", ")}.`
       : "Core resume sections are present.",
+    targetTitle && !titleMatches(resumeTitle, targetTitle)
+      ? `Align the resume title under your name with the target role: ${targetTitle}.`
+      : "Resume title alignment is acceptable for the target role.",
   ];
 
   return {
