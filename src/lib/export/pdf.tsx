@@ -11,6 +11,7 @@ import { normalizeExternalUrl } from "@/lib/maker/bullets";
 import { formatAcademicScore } from "@/lib/resume/academic-score";
 import { resumeContactItems } from "@/lib/resume/contact";
 import { formatResumeDateRange } from "@/lib/resume/dates";
+import { normalizeSkillList } from "@/lib/resume/skills";
 import type { ResumeDocument, ResumeSectionId } from "@/types/resume";
 
 const styles = StyleSheet.create({
@@ -231,7 +232,7 @@ function SkillsSection({ resume }: { resume: ResumeDocument }) {
         .map((group) => (
           <Text key={group.id} style={styles.paragraph}>
             <Text style={styles.inlineBold}>{group.name}: </Text>
-            {group.skills.join(", ")}
+            {normalizeSkillList(group.skills).join(", ")}
           </Text>
         ))}
     </View>
@@ -254,7 +255,7 @@ function ProjectsSection({ resume }: { resume: ResumeDocument }) {
               ) : null}
             </Text>
             {project.techStack?.length ? (
-              <Text style={styles.projectMeta}>{project.techStack.join(", ")}</Text>
+              <Text style={styles.projectMeta}>{normalizeSkillList(project.techStack).join(", ")}</Text>
             ) : null}
           </View>
           <BulletList items={project.bullets.map(cleanStrongMarkers)} />

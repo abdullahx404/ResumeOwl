@@ -8,6 +8,7 @@ import { formatAcademicScore, sanitizeAcademicScoreInput } from "@/lib/resume/ac
 import { resumeContactItems } from "@/lib/resume/contact";
 import { createLatexStyleSource } from "@/lib/resume/source";
 import { formatResumeDateRange } from "@/lib/resume/dates";
+import { normalizeSkillList } from "@/lib/resume/skills";
 import { cn } from "@/lib/utils";
 import { useResumeStore } from "@/stores/resume-store";
 import type { EducationEntry, ExperienceEntry, OptionalSection, ProjectEntry, ResumeDocument, ResumeSectionId, SkillGroup } from "@/types/resume";
@@ -419,11 +420,11 @@ function ResumeSection({
           editing ? (
             <div key={group.id} className="rounded-md border border-slate-200 p-2">
               <EditInput label="Group" value={group.name} onChange={(value) => updateSkillGroup(group.id, { name: value })} />
-              <EditTextarea label="Skills" value={group.skills.join(", ")} onChange={(value) => updateSkillGroup(group.id, { skills: splitEditableList(value) })} />
+              <EditTextarea label="Skills" value={normalizeSkillList(group.skills).join(", ")} onChange={(value) => updateSkillGroup(group.id, { skills: splitEditableList(value) })} />
             </div>
           ) : (
             <p key={group.id}>
-              <strong>{group.name}:</strong> {group.skills.join(", ")}
+              <strong>{group.name}:</strong> {normalizeSkillList(group.skills).join(", ")}
             </p>
           )
         ))}
@@ -441,7 +442,7 @@ function ResumeSection({
                 <EditInput label="Project Name" value={project.name} onChange={(value) => updateProject(project.id, { name: value })} />
                 <EditInput label="Link Name" value={project.linkLabel ?? ""} onChange={(value) => updateProject(project.id, { linkLabel: value })} />
                 <EditInput label="Link Address" value={project.link ?? ""} onChange={(value) => updateProject(project.id, { link: value })} />
-                <EditInput label="Tech Stack" value={project.techStack?.join(", ") ?? ""} onChange={(value) => updateProject(project.id, { techStack: splitEditableList(value) })} />
+                <EditInput label="Tech Stack" value={normalizeSkillList(project.techStack ?? []).join(", ")} onChange={(value) => updateProject(project.id, { techStack: splitEditableList(value) })} />
                 <EditTextarea label="Bullets" value={project.bullets.join("\n")} onChange={(value) => updateProject(project.id, { bullets: splitEditableLines(value) })} />
               </EditGrid>
             ) : null}
@@ -459,7 +460,7 @@ function ResumeSection({
                   </a>
                 ) : null}
               </strong>
-              <span className="text-xs text-slate-600">{project.techStack?.join(", ")}</span>
+              <span className="text-xs text-slate-600">{normalizeSkillList(project.techStack ?? []).join(", ")}</span>
             </div>
             <BulletList items={project.bullets} />
           </div>

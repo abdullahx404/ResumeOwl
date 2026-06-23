@@ -1,3 +1,5 @@
+import { normalizeSkillList } from "@/lib/resume/skills";
+
 export const commonCourses = [
   "Accounting",
   "Advanced Database Systems",
@@ -263,7 +265,7 @@ export function addUniqueValue(values: string[], value: string): string[] {
     return values;
   }
 
-  return [...values, trimmed];
+  return normalizeSkillList([...values, trimmed]);
 }
 
 export function autoGroupSkills(skills: string[]) {
@@ -271,11 +273,11 @@ export function autoGroupSkills(skills: string[]) {
     .map(([name, groupSkills]) => ({
       id: `skills-${name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`,
       name,
-      skills: skills.filter((skill) => groupSkills.includes(skill.toLowerCase())),
+      skills: normalizeSkillList(skills.filter((skill) => groupSkills.includes(skill.toLowerCase()))),
     }))
     .filter((group) => group.skills.length > 0);
   const used = new Set(grouped.flatMap((group) => group.skills.map((skill) => skill.toLowerCase())));
-  const other = skills.filter((skill) => !used.has(skill.toLowerCase()));
+  const other = normalizeSkillList(skills.filter((skill) => !used.has(skill.toLowerCase())));
 
   return other.length ? [...grouped, { id: "skills-other", name: "Other", skills: other }] : grouped;
 }

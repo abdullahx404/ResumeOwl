@@ -10,6 +10,7 @@ import { formatAcademicScore, sanitizeAcademicScoreInput } from "@/lib/resume/ac
 import { resumeContactItems } from "@/lib/resume/contact";
 import { formatResumeDateRange } from "@/lib/resume/dates";
 import { getStoredProfile } from "@/lib/resume/persistence";
+import { normalizeSkillList } from "@/lib/resume/skills";
 import { useResumeStore } from "@/stores/resume-store";
 import type {
   EducationEntry,
@@ -377,7 +378,7 @@ export function MakerWorkspace() {
 
   function buildSkillGroups(): SkillGroup[] {
     if (skillMode === "none") {
-      return skills.length ? [{ id: "skills-all", name: "Skills", skills }] : [];
+      return skills.length ? [{ id: "skills-all", name: "Skills", skills: normalizeSkillList(skills) }] : [];
     }
 
     if (skillMode === "manual") {
@@ -385,7 +386,7 @@ export function MakerWorkspace() {
         .map((group) => ({
           id: group.id,
           name: group.name.trim() || "Skill Group",
-          skills: group.skills,
+          skills: normalizeSkillList(group.skills),
         }))
         .filter((group) => group.skills.length > 0);
     }
@@ -1058,7 +1059,7 @@ function buildPreviewSections(resume: ResumeDocument): PreviewSectionItem[] {
         <div className="space-y-1 text-sm">
           {resume.skillGroups.map((group) => (
             <p key={group.id}>
-              <strong>{group.name}:</strong> {group.skills.join(", ")}
+              <strong>{group.name}:</strong> {normalizeSkillList(group.skills).join(", ")}
             </p>
           ))}
         </div>
@@ -1083,7 +1084,7 @@ function buildPreviewSections(resume: ResumeDocument): PreviewSectionItem[] {
                     </a>
                   ) : null}
                 </strong>
-                <span className="text-xs text-slate-600">{project.techStack?.join(", ")}</span>
+                <span className="text-xs text-slate-600">{normalizeSkillList(project.techStack ?? []).join(", ")}</span>
               </div>
               <PreviewBullets items={project.bullets} />
             </div>

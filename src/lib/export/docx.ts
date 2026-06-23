@@ -10,6 +10,7 @@ import { normalizeExternalUrl } from "@/lib/maker/bullets";
 import { formatAcademicScore } from "@/lib/resume/academic-score";
 import { resumeContactItems } from "@/lib/resume/contact";
 import { formatResumeDateRange } from "@/lib/resume/dates";
+import { normalizeSkillList } from "@/lib/resume/skills";
 import type { ResumeDocument, ResumeSectionId } from "@/types/resume";
 
 function heading(text: string) {
@@ -120,7 +121,7 @@ export function buildDocxDocument(resume: ResumeDocument): Document {
     if (sectionId === "skills" && resume.skillGroups.length) {
       children.push(heading(sectionTitle(sectionId)));
       resume.skillGroups.forEach((group) => {
-        children.push(new Paragraph(`${group.name}: ${group.skills.join(", ")}`));
+        children.push(new Paragraph(`${group.name}: ${normalizeSkillList(group.skills).join(", ")}`));
       });
     }
 
@@ -147,7 +148,7 @@ export function buildDocxDocument(resume: ResumeDocument): Document {
           ],
         }));
         if (project.techStack?.length) {
-          children.push(new Paragraph(project.techStack.join(", ")));
+          children.push(new Paragraph(normalizeSkillList(project.techStack).join(", ")));
         }
         project.bullets.forEach((item) => children.push(bullet(item)));
       });

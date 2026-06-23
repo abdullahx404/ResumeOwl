@@ -1,4 +1,5 @@
 import { commonSkills } from "./options";
+import { normalizeSkillList } from "@/lib/resume/skills";
 
 const leadingActionPattern =
   /^(built|build|designed|design|implemented|implement|integrated|integrate|improved|improve|created|create|developed|develop|architected|architect|engineered|engineer|made|make)\s+/i;
@@ -117,10 +118,10 @@ export function polishSummaryLocally(summary: string): string {
 }
 
 export function parseCommaList(value: string): string[] {
-  return value
+  return normalizeSkillList(value
     .split(/[,;\n]/)
     .map((item) => item.trim())
-    .filter(Boolean);
+    .filter(Boolean));
 }
 
 const knownTech = [
@@ -219,7 +220,7 @@ export function normalizeExternalUrl(value: string): string {
 export function inferTechStack(notes: string): string[] {
   const normalized = notes.toLowerCase();
 
-  return [...new Set(knownTech)].filter((tech) => {
+  return normalizeSkillList([...new Set(knownTech)].filter((tech) => {
     const term = tech.toLowerCase();
 
     if (term.length <= 2 || /^[a-z+#.]+$/i.test(term)) {
@@ -228,7 +229,7 @@ export function inferTechStack(notes: string): string[] {
     }
 
     return normalized.includes(term);
-  });
+  }));
 }
 
 export function textToBullets(text: string, count = 3): string[] {
