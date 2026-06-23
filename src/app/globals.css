@@ -75,6 +75,12 @@ textarea {
   transform: translateY(-2px);
 }
 
+:root[data-theme="dark"] .interactive-surface:hover {
+  background: #13251f !important;
+  border-color: #2f6f5b !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
 .interactive-surface:active {
   transform: translateY(0);
 }
@@ -189,6 +195,30 @@ textarea {
   border-color: var(--border) !important;
 }
 
+:root[data-theme="dark"] .hover\:bg-slate-50:hover,
+:root[data-theme="dark"] .hover\:bg-slate-100:hover,
+:root[data-theme="dark"] .hover\:bg-owl-50:hover {
+  background: #17362d !important;
+}
+
+:root[data-theme="dark"] .hover\:bg-owl-900:hover,
+:root[data-theme="dark"] .hover\:bg-owl-800:hover,
+:root[data-theme="dark"] .hover\:bg-owl-700:hover {
+  background: #065f46 !important;
+}
+
+:root[data-theme="dark"] .hover\:border-owl-100:hover,
+:root[data-theme="dark"] .hover\:border-owl-200:hover,
+:root[data-theme="dark"] .hover\:border-owl-300:hover {
+  border-color: #34d399 !important;
+}
+
+:root[data-theme="dark"] .hover\:text-owl-900:hover,
+:root[data-theme="dark"] .hover\:text-owl-800:hover,
+:root[data-theme="dark"] .hover\:text-owl-700:hover {
+  color: #d1fae5 !important;
+}
+
 :root[data-theme="dark"] input,
 :root[data-theme="dark"] textarea,
 :root[data-theme="dark"] select {
@@ -264,6 +294,10 @@ textarea {
   opacity: 0;
   position: absolute;
   transition: opacity 140ms ease;
+}
+
+:root[data-theme="dark"] .touch-feedback::after {
+  background: rgba(52, 211, 153, 0.16);
 }
 
 .touch-feedback:active::after {
