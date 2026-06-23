@@ -1,9 +1,8 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Copy, Download, Edit3, FileDown, Printer, RotateCcw, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Download, Edit3, FileDown, RotateCcw, Save, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { downloadBlob, downloadTextFile, safeFileName } from "@/lib/export/filenames";
-import { createPrintableResumeHtml } from "@/lib/export/print-html";
 import { normalizeExternalUrl } from "@/lib/maker/bullets";
 import { formatAcademicScore, sanitizeAcademicScoreInput } from "@/lib/resume/academic-score";
 import { resumeContactItems } from "@/lib/resume/contact";
@@ -101,40 +100,12 @@ export function ResumePreview() {
     window.setTimeout(() => setCopyStatus(""), 1800);
   }
 
-  function printResume() {
-    const frame = document.createElement("iframe");
-    frame.style.position = "fixed";
-    frame.style.right = "0";
-    frame.style.bottom = "0";
-    frame.style.width = "0";
-    frame.style.height = "0";
-    frame.style.border = "0";
-    frame.title = "Printable resume";
-    document.body.appendChild(frame);
-
-    const frameWindow = frame.contentWindow;
-    const frameDocument = frame.contentDocument;
-
-    if (!frameWindow || !frameDocument) {
-      document.body.removeChild(frame);
-      return;
-    }
-
-    frameDocument.open();
-    frameDocument.write(createPrintableResumeHtml(resume));
-    frameDocument.close();
-
-    frameWindow.focus();
-    frameWindow.setTimeout(() => {
-      frameWindow.print();
-      frameWindow.setTimeout(() => {
-        frame.remove();
-      }, 1000);
-    }, 100);
-  }
-
   function sourceFileName(extension: "tex" | "docx") {
     return `${safeFileName(resume.personal.fullName)}.${extension}`;
+  }
+
+  function pdfFileName() {
+    return `${safeFileName(resume.personal.fullName)}.pdf`;
   }
 
   function downloadSource() {
@@ -148,6 +119,14 @@ export function ResumePreview() {
     const blob = await createDocxBlob(resume);
     downloadBlob(blob, sourceFileName("docx"));
     setCopyStatus("DOCX downloaded");
+    window.setTimeout(() => setCopyStatus(""), 1800);
+  }
+
+  async function downloadPdf() {
+    const { createPdfBlob } = await import("@/lib/export/pdf");
+    const blob = await createPdfBlob(resume);
+    downloadBlob(blob, pdfFileName());
+    setCopyStatus("PDF downloaded");
     window.setTimeout(() => setCopyStatus(""), 1800);
   }
 
@@ -209,9 +188,9 @@ export function ResumePreview() {
             <button
               type="button"
               className="inline-flex items-center justify-center gap-2 rounded-md bg-owl-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-owl-900"
-              onClick={printResume}
+              onClick={downloadPdf}
             >
-              <Printer className="h-4 w-4" />
+              <FileDown className="h-4 w-4" />
               PDF
             </button>
             <button
