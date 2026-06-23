@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, PencilLine, SearchCheck } from "lucide-react";
+import { ClipboardEdit, FileText, PencilLine, SearchCheck } from "lucide-react";
 
 const tools = [
   {
@@ -7,6 +7,12 @@ const tools = [
     title: "Resume Preview",
     description: "Edit a clean resume preview, reorder sections, copy source, and export.",
     icon: FileText,
+  },
+  {
+    href: "/editor",
+    title: "Resume Editor",
+    description: "Paste an existing resume and reshape it into ResumeOwl's editable format.",
+    icon: ClipboardEdit,
   },
   {
     href: "/analyzer",
@@ -37,7 +43,7 @@ export default function HomePage() {
           </div>
         </header>
 
-        <section className="grid gap-4 py-8 md:grid-cols-3">
+        <section className="grid gap-4 py-8 md:grid-cols-2 xl:grid-cols-4">
           {tools.map((tool) => {
             const Icon = tool.icon;
 
