@@ -8,7 +8,7 @@ import { extractPlainSummary, inferTechStack, normalizeExternalUrl, notesToBulle
 import { addUniqueValue, autoGroupSkills, commonCourses, commonSkills, filterOptions } from "@/lib/maker/options";
 import { formatAcademicScore, sanitizeAcademicScoreInput } from "@/lib/resume/academic-score";
 import { resumeContactItems } from "@/lib/resume/contact";
-import { formatResumeDateRange } from "@/lib/resume/dates";
+import { formatResumeDateRange, isValidMonthDateRange } from "@/lib/resume/dates";
 import { getStoredProfile } from "@/lib/resume/persistence";
 import { normalizeSkillList } from "@/lib/resume/skills";
 import { useResumeStore } from "@/stores/resume-store";
@@ -530,6 +530,44 @@ export function MakerWorkspace() {
     flash("Maker data cleared from this session.");
   }
 
+  function updateEducationDate(id: string, field: "startDate" | "endDate", value: string) {
+    setEducation((current) =>
+      current.map((entry) => {
+        if (entry.id !== id) {
+          return entry;
+        }
+
+        const next = { ...entry, [field]: value };
+
+        if (!isValidMonthDateRange(next.startDate, next.endDate)) {
+          flash("Graduation month/year cannot be before intake month/year.");
+          return entry;
+        }
+
+        return next;
+      }),
+    );
+  }
+
+  function updateExperienceDate(id: string, field: "startDate" | "endDate", value: string) {
+    setExperience((current) =>
+      current.map((entry) => {
+        if (entry.id !== id) {
+          return entry;
+        }
+
+        const next = { ...entry, [field]: value };
+
+        if (!isValidMonthDateRange(next.startDate, next.endDate)) {
+          flash("End month/year cannot be before start month/year.");
+          return entry;
+        }
+
+        return next;
+      }),
+    );
+  }
+
   return (
     <>
       <NotificationPill message={notice} tone="info" />
@@ -575,8 +613,8 @@ export function MakerWorkspace() {
                 <div key={item.id} className="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-2">
                   <TextField label="Institute" value={item.institute} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, institute: value } : entry))} />
                   <TextField label="Degree/Program" value={item.degree} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, degree: value } : entry))} />
-                  <TextField type="month" label="Intake Month/Year" value={item.startDate ?? ""} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, startDate: value } : entry))} />
-                  <TextField type="month" label="Graduation Month/Year" value={item.endDate ?? ""} onChange={(value) => setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, endDate: value } : entry))} />
+                  <TextField type="month" label="Intake Month/Year" value={item.startDate ?? ""} onChange={(value) => updateEducationDate(item.id, "startDate", value)} />
+                  <TextField type="month" label="Graduation Month/Year" value={item.endDate ?? ""} onChange={(value) => updateEducationDate(item.id, "endDate", value)} />
                   <TextField label="CGPA/Percentage" value={item.cgpa ?? ""} onChange={(value) => {
                     const next = sanitizeAcademicScoreInput(value);
                     setEducation((current) => current.map((entry) => entry.id === item.id ? { ...entry, cgpa: next || (value ? entry.cgpa : "") } : entry));
@@ -630,7 +668,7 @@ export function MakerWorkspace() {
           <Panel title="Experience">
             <div className="space-y-3">
               {experience.map((item) => (
-                <ExperienceEditor key={item.id} item={item} setExperience={setExperience} isGenerating={experienceGeneratingIds.includes(item.id)} onGenerate={() => generateBulletsForExperience(item)} />
+                <ExperienceEditor key={item.id} item={item} setExperience={setExperience} isGenerating={experienceGeneratingIds.includes(item.id)} onGenerate={() => generateBulletsForExperience(item)} onDateChange={updateExperienceDate} />
               ))}
             </div>
             <AddButton label="Add Experience" onClick={() => setExperience((current) => [...current, emptyExperience()])} />
@@ -899,14 +937,26 @@ function ProjectEditor({
   );
 }
 
-function ExperienceEditor({ item, setExperience, isGenerating, onGenerate }: { item: ExperienceDraft; setExperience: React.Dispatch<React.SetStateAction<ExperienceDraft[]>>; isGenerating: boolean; onGenerate: () => void }) {
+function ExperienceEditor({
+  item,
+  setExperience,
+  isGenerating,
+  onGenerate,
+  onDateChange,
+}: {
+  item: ExperienceDraft;
+  setExperience: React.Dispatch<React.SetStateAction<ExperienceDraft[]>>;
+  isGenerating: boolean;
+  onGenerate: () => void;
+  onDateChange: (id: string, field: "startDate" | "endDate", value: string) => void;
+}) {
   return (
     <div className="rounded-md border border-slate-200 p-3">
       <div className="grid gap-3 md:grid-cols-2">
         <TextField label="Role" value={item.role} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, role: value } : entry))} />
         <TextField label="Company" value={item.company} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, company: value } : entry))} />
-        <TextField type="month" label="Start Month/Year" value={item.startDate} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, startDate: value } : entry))} />
-        <TextField type="month" label="End Month/Year" value={item.endDate} onChange={(value) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, endDate: value } : entry))} />
+        <TextField type="month" label="Start Month/Year" value={item.startDate} onChange={(value) => onDateChange(item.id, "startDate", value)} />
+        <TextField type="month" label="End Month/Year" value={item.endDate} onChange={(value) => onDateChange(item.id, "endDate", value)} />
         <label className="block text-sm font-medium text-slate-700">Bullet Count<select className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" value={item.bulletCount} onChange={(event) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, bulletCount: Number(event.target.value) } : entry))}>{[3, 4, 5, 6].map((count) => <option key={count}>{count}</option>)}</select></label>
       </div>
       <textarea className="mt-3 min-h-24 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-owl-600 focus:ring-2 focus:ring-owl-100" value={item.notes} onChange={(event) => setExperience((current) => current.map((entry) => entry.id === item.id ? { ...entry, notes: event.target.value } : entry))} placeholder="What did you do?" />

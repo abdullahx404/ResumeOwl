@@ -38,3 +38,18 @@ export function formatResumeDate(value?: string): string {
 export function formatResumeDateRange(startDate?: string, endDate?: string): string {
   return [formatResumeDate(startDate), formatResumeDate(endDate)].filter(Boolean).join(" - ");
 }
+
+export function isValidMonthDateRange(startDate?: string, endDate?: string): boolean {
+  const start = startDate?.trim();
+  const end = endDate?.trim();
+
+  if (!start || !end) {
+    return true;
+  }
+
+  if (!/^\d{4}-\d{2}$/.test(start) || !/^\d{4}-\d{2}$/.test(end)) {
+    return true;
+  }
+
+  return end >= start;
+}
