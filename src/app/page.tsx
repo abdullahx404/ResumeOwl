@@ -30,9 +30,12 @@ const tools = [
 
 export default function HomePage() {
   return (
-    <main id="main-content" className="app-page subtle-grid min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+    <main
+      id="main-content"
+      className="app-page subtle-grid px-4 py-6 sm:px-6 lg:h-[calc(100vh-4rem)] lg:overflow-hidden lg:px-8 lg:py-8"
+    >
       <div className="mx-auto max-w-6xl">
-        <header className="motion-surface border-b border-slate-200 pb-8">
+        <header className="motion-surface border-b border-slate-200 pb-6">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-owl-700">
               ResumeOwl
@@ -43,7 +46,7 @@ export default function HomePage() {
           </div>
         </header>
 
-        <section className="grid gap-4 py-8 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-4 py-6 md:grid-cols-2 xl:grid-cols-4">
           {tools.map((tool, index) => {
             const Icon = tool.icon;
 
