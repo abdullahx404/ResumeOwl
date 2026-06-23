@@ -316,6 +316,13 @@ textarea {
   border-color: #cbd5e1 !important;
 }
 
+:root[data-theme="dark"] .resume-page input,
+:root[data-theme="dark"] .resume-page textarea {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #111827 !important;
+}
+
 :root[data-theme="dark"] .resume-page button {
   color: #334155 !important;
 }
