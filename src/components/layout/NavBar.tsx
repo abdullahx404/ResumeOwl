@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FileText } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import NavHeader from "@/components/ui/nav-header";
 import { getStoredProfile } from "@/lib/resume/persistence";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
@@ -35,6 +36,10 @@ export function NavBar() {
     startTransition(() => undefined);
   }
 
+  const activeHref =
+    links.find((link) => (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)))
+      ?.href ?? "/";
+
   return (
     <header className="no-print sticky top-0 z-40 border-b border-slate-200/80 bg-white/88 shadow-[0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-xl">
       <div
@@ -51,24 +56,8 @@ export function NavBar() {
           <span className="text-base tracking-normal">ResumeOwl</span>
         </Link>
 
-        <div className="flex items-center gap-1 overflow-x-auto">
-          {links.map((link) => {
-            const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
-
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={beginNavigation}
-                className={cn(
-                  "touch-feedback relative rounded-md px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-owl-50 hover:text-owl-900",
-                  active && "text-owl-900 after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:rounded-full after:bg-owl-700",
-                )}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+        <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
+          <NavHeader activeHref={activeHref} items={links} onNavigate={beginNavigation} />
           <span className="ml-2 hidden max-w-40 truncate rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700 sm:inline">
             {name}
           </span>
