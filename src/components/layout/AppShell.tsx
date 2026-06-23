@@ -56,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           aria-modal="true"
           aria-labelledby="resumeowl-onboarding-title"
         >
-          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-2xl">
+          <div className="animate-soft-pop w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-2xl">
             {step === "welcome" ? (
               <>
                 <p className="text-sm font-semibold uppercase tracking-wide text-owl-700">

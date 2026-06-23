@@ -11,7 +11,9 @@
 }
 
 body {
-  background: #f8fafc;
+  background:
+    linear-gradient(180deg, rgba(236, 253, 245, 0.42), rgba(248, 250, 252, 0) 280px),
+    #f8fafc;
   color: #111827;
 }
 
@@ -24,6 +26,32 @@ textarea {
 :focus-visible {
   outline: 2px solid #047857;
   outline-offset: 2px;
+}
+
+::selection {
+  background: #d1fae5;
+  color: #064e3b;
+}
+
+.motion-surface {
+  animation: fade-up 220ms ease-out both;
+}
+
+.interactive-surface {
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    background-color 160ms ease;
+}
+
+.interactive-surface:hover {
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
+  transform: translateY(-2px);
+}
+
+.interactive-surface:active {
+  transform: translateY(0);
 }
 
 .skip-link {
@@ -57,6 +85,16 @@ textarea {
 
 .print-only {
   display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
 }
 
 @media print {

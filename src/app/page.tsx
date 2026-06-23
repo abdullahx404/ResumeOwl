@@ -32,7 +32,7 @@ export default function HomePage() {
   return (
     <main id="main-content" className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <header className="border-b border-slate-200 pb-8">
+        <header className="motion-surface border-b border-slate-200 pb-8">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-owl-700">
               ResumeOwl
@@ -44,14 +44,15 @@ export default function HomePage() {
         </header>
 
         <section className="grid gap-4 py-8 md:grid-cols-2 xl:grid-cols-4">
-          {tools.map((tool) => {
+          {tools.map((tool, index) => {
             const Icon = tool.icon;
 
             return (
               <Link
                 key={tool.href}
                 href={tool.href}
-                className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:border-owl-100"
+                className="interactive-surface motion-surface rounded-lg border border-slate-200 bg-white p-5 shadow-soft hover:border-owl-100"
+                style={{ animationDelay: `${index * 45}ms` }}
               >
                 <Icon className="h-6 w-6 text-owl-700" aria-hidden="true" />
                 <h2 className="mt-4 text-lg font-semibold text-ink">{tool.title}</h2>
