@@ -125,13 +125,29 @@ textarea {
 
 :root[data-theme="dark"] .surface-card,
 :root[data-theme="dark"] .bg-white {
-  background-color: var(--surface) !important;
+  background: var(--surface) !important;
   border-color: var(--border) !important;
 }
 
 :root[data-theme="dark"] .bg-slate-50,
 :root[data-theme="dark"] .bg-slate-100 {
-  background-color: var(--surface-soft) !important;
+  background: var(--surface-soft) !important;
+}
+
+:root[data-theme="dark"] .bg-owl-50 {
+  background: #102820 !important;
+}
+
+:root[data-theme="dark"] .bg-blue-50 {
+  background: #0f2031 !important;
+}
+
+:root[data-theme="dark"] .bg-red-50 {
+  background: #311516 !important;
+}
+
+:root[data-theme="dark"] .bg-amber-50 {
+  background: #2b2110 !important;
 }
 
 :root[data-theme="dark"] .text-ink,
@@ -169,12 +185,41 @@ textarea {
   color: #111827 !important;
 }
 
+:root[data-theme="dark"] .resume-page .bg-white {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+:root[data-theme="dark"] .resume-page .bg-slate-50,
+:root[data-theme="dark"] .resume-page .bg-slate-100 {
+  background: #f8fafc !important;
+}
+
 :root[data-theme="dark"] .resume-page .text-slate-500,
 :root[data-theme="dark"] .resume-page .text-slate-600,
 :root[data-theme="dark"] .resume-page .text-slate-700,
 :root[data-theme="dark"] .resume-page .text-slate-800,
 :root[data-theme="dark"] .resume-page .text-ink {
-  color: inherit !important;
+  color: #111827 !important;
+}
+
+:root[data-theme="dark"] .resume-page .text-slate-500,
+:root[data-theme="dark"] .resume-page .text-slate-600 {
+  color: #475569 !important;
+}
+
+:root[data-theme="dark"] .resume-page .border-slate-200,
+:root[data-theme="dark"] .resume-page .border-slate-300 {
+  border-color: #cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .resume-page .resume-heading {
+  color: #111827 !important;
+  border-color: #cbd5e1 !important;
+}
+
+:root[data-theme="dark"] .resume-page button {
+  color: #334155 !important;
 }
 
 .subtle-grid {
