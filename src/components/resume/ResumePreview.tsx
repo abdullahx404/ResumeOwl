@@ -38,7 +38,7 @@ function SectionControls({
     <div className="no-print absolute right-0 top-0 flex translate-y-[-50%] gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
       <button
         type="button"
-        className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+        className="resume-control-button rounded-full p-1.5 text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
         aria-label={`Move ${sectionLabels[sectionId]} up`}
         disabled={index === 0}
         onClick={() => onMove(sectionId, "up")}
@@ -47,7 +47,7 @@ function SectionControls({
       </button>
       <button
         type="button"
-        className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+        className="resume-control-button rounded-full p-1.5 text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
         aria-label={`Move ${sectionLabels[sectionId]} down`}
         disabled={index === total - 1}
         onClick={() => onMove(sectionId, "down")}

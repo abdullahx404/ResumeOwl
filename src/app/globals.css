@@ -345,6 +345,13 @@ textarea {
   color: #334155 !important;
 }
 
+:root[data-theme="dark"] .resume-page .resume-control-button:disabled {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #64748b !important;
+  opacity: 0.4 !important;
+}
+
 .subtle-grid {
   background-image:
     linear-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 1px),
