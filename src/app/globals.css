@@ -297,6 +297,10 @@ textarea {
   color: #111827 !important;
 }
 
+.resume-page {
+  font-family: "Times New Roman", Times, serif;
+}
+
 :root[data-theme="dark"] .resume-page .bg-white {
   background: #ffffff !important;
   border-color: #e2e8f0 !important;

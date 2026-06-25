@@ -160,7 +160,7 @@ export function createPrintableResumeHtml(resume: ResumeDocument) {
       body {
         background: #ffffff;
         color: #111827;
-        font-family: Arial, Helvetica, sans-serif;
+        font-family: "Times New Roman", Times, serif;
         font-size: 10.5pt;
         line-height: 1.42;
         margin: 0;

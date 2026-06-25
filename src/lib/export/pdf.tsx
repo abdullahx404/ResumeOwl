@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#cbd5e1",
     paddingBottom: 3,
     fontSize: 12,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Times-Bold",
     textTransform: "uppercase",
   },
   row: {
