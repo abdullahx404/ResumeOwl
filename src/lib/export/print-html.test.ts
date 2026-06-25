@@ -8,6 +8,8 @@ describe("createPrintableResumeHtml", () => {
 
     expect(html).toContain("<a ");
     expect(html).toContain("ResumeOwl Prototype");
+    expect(html).toContain("text-decoration: none");
+    expect(html).toContain("margin-left: 6px");
     expect(html).not.toMatch(/<canvas|<img|toDataURL|html2canvas/i);
   });
 });

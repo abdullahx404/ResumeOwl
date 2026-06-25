@@ -267,7 +267,7 @@ export function ResumePreview() {
               <span key={item.key}>
                 {index > 0 ? " | " : ""}
                 {item.href ? (
-                  <a className="underline-offset-2 hover:underline" href={item.href} target="_blank" rel="noreferrer">
+                  <a className="text-blue-700 hover:text-blue-800" href={item.href} target="_blank" rel="noreferrer">
                     {item.label}
                   </a>
                 ) : (
@@ -447,11 +447,11 @@ function ResumeSection({
               </EditGrid>
             ) : null}
             <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-              <strong className="inline-flex flex-wrap items-baseline gap-1">
+              <strong className="inline-flex flex-wrap items-baseline gap-2">
                 {project.name}
                 {project.link ? (
                   <a
-                    className="text-xs font-medium italic text-slate-500 underline"
+                    className="ml-1 text-xs font-medium italic text-blue-700 hover:text-blue-800"
                     href={normalizeExternalUrl(project.link)}
                     target="_blank"
                     rel="noreferrer"

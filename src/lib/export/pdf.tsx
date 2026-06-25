@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   },
   contactLink: {
     color: "#2563eb",
-    textDecoration: "underline",
+    textDecoration: "none",
   },
   contactText: {
     color: "#4b5563",
@@ -103,10 +103,10 @@ const styles = StyleSheet.create({
     color: "#4b5563",
   },
   projectLink: {
-    marginLeft: 8,
+    marginLeft: 12,
     color: "#2563eb",
     fontFamily: "Times-Italic",
-    textDecoration: "underline",
+    textDecoration: "none",
   },
 });
 

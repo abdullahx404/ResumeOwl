@@ -177,7 +177,7 @@ export function createPrintableResumeHtml(resume: ResumeDocument) {
       }
       .title { color: #334155; font-size: 11pt; font-weight: 700; margin-top: 4px; }
       .contact { color: #475569; font-size: 9.5pt; margin-top: 10px; }
-      a { color: inherit; text-decoration: underline; }
+      a { color: #2563eb; text-decoration: none; }
       h2 {
         border-bottom: 1px solid #cbd5e1;
         color: #111827;
@@ -193,7 +193,7 @@ export function createPrintableResumeHtml(resume: ResumeDocument) {
       .entry { break-inside: avoid; margin-bottom: 8px; }
       .row { display: flex; gap: 12px; justify-content: space-between; }
       .row span { color: #475569; text-align: right; }
-      .side-link { color: #64748b; font-size: 9pt; font-style: italic; font-weight: 600; }
+      .side-link { color: #2563eb; font-size: 9pt; font-style: italic; font-weight: 600; margin-left: 6px; }
     </style>
   </head>
   <body>
